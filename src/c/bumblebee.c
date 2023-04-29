@@ -167,6 +167,7 @@ static void window_unload(Window *window) {
   text_layer_destroy(s_dest_layer);
   layer_destroy(s_vehicle_background_layer);
   gdraw_command_image_destroy(s_vehicle_image);
+  layer_destroy(s_route_layer);
 }
 
 static void init(void) {
