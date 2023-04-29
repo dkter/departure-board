@@ -13,7 +13,8 @@ static TextLayer *s_unit_layer;
 static TextLayer *s_next_layer;
 static Layer *s_route_layer;
 static Layer *s_vehicle_background_layer;
-static GDrawCommandImage* s_vehicle_image;
+static GDrawCommandSequence* s_vehicle_sequence;
+static int s_vehicle_frame_index = 9;
 
 static char time_text[8];
 static char stop_text[32];
@@ -168,9 +169,11 @@ static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   graphics_context_set_fill_color(ctx, GColorRed);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-  // gdraw_command_image_draw(ctx, s_vehicle_image, GPoint(0, 0));
   GPoint vehicle_origin = GPoint(bounds.origin.x, bounds.origin.y + 40);
-  gdraw_command_image_draw(ctx, s_vehicle_image, vehicle_origin);
+  GDrawCommandFrame* frame = gdraw_command_sequence_get_frame_by_index(s_vehicle_sequence, s_vehicle_frame_index);
+  if (frame) {
+    gdraw_command_frame_draw(ctx, s_vehicle_sequence, frame, vehicle_origin);
+  }
 
   // overhead wire!
   graphics_context_set_stroke_color(ctx, GColorBlack);
@@ -297,12 +300,12 @@ static void window_unload(Window *window) {
   text_layer_destroy(s_stop_layer);
   text_layer_destroy(s_dest_layer);
   layer_destroy(s_vehicle_background_layer);
-  gdraw_command_image_destroy(s_vehicle_image);
+  gdraw_command_sequence_destroy(s_vehicle_sequence);
   layer_destroy(s_route_layer);
 }
 
 static void init(void) {
-  s_vehicle_image = gdraw_command_image_create_with_resource(RESOURCE_ID_STREETCAR);
+  s_vehicle_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
 
   s_window = window_create();
   window_set_click_config_provider(s_window, click_config_provider);
