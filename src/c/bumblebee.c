@@ -93,7 +93,7 @@ static const uint32_t BACKGROUND_SCROLL_DURATION = 100 * 2;
 static const uint32_t SCROLL_DURATION = 130 * 2;
 static const int16_t SCROLL_DIST_OUT = 20;
 static const int16_t SCROLL_DIST_IN = 8;
-static const uint32_t VEHICLE_SCROLL_DURATION = 340;
+static const uint32_t VEHICLE_SCROLL_DURATION = 260;
 static const int16_t VEHICLE_SCROLL_DIST = 60;
 
 typedef enum {
@@ -170,7 +170,7 @@ static void close_door_frame_handler(void* context) {
 }
 
 static void _open_door_frame_handler(Animation* animation, bool finished, void* context) {
-  open_door_frame_handler(context);
+  app_timer_register(400, open_door_frame_handler, NULL);
 }
 
 static Animation *create_scroll_anim(ScrollDirection direction) {
