@@ -1,0 +1,40 @@
+{
+  "name": "bumblebee",
+  "author": "MakeAwesomeHappen",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "bumblebee",
+    "uuid": "a18a191e-51e0-48a3-9c63-075eea857333",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "dummy"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "raw",
+          "name": "SUBWAY",
+          "file": "subway_small_pl.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "STREETCAR",
+          "file": "streetcar_v.pdc"
+        }
+      ]
+    }
+  }
+}
