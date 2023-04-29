@@ -126,6 +126,16 @@ static void anim_during_scroll_dec(Animation *animation, bool finished, void *co
   window_data_dec(&sample_data_arr);
 }
 
+static Animation *create_scroll_anim(ScrollDirection direction) {
+  ScrollDirection opposite_direction = (direction == ScrollDirectionDown) ? ScrollDirectionUp : ScrollDirectionDown;
+  Animation* out_anim = create_outbound_anim(direction);
+  animation_set_handlers(out_anim, (AnimationHandlers) {
+    .stopped = (direction == ScrollDirectionDown) ? anim_during_scroll_inc : anim_during_scroll_dec,
+  }, NULL);
+  Animation* in_anim = create_inbound_anim(opposite_direction);
+  return animation_sequence_create(out_anim, in_anim, NULL);
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(s_time_layer, "Select");
 }
@@ -133,30 +143,20 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   int res = window_data_can_dec(&sample_data_arr);
   if (res == 0) {
-    Animation* out_anim = create_outbound_anim(ScrollDirectionUp);
-    animation_set_handlers(out_anim, (AnimationHandlers) {
-      .stopped = anim_during_scroll_dec,
-    }, NULL);
-    Animation* in_anim = create_inbound_anim(ScrollDirectionDown);
-    animation_schedule(animation_sequence_create(out_anim, in_anim, NULL));
+    animation_schedule(create_scroll_anim(ScrollDirectionUp));
   }
   else {
-    animation_schedule(create_inbound_anim(ScrollDirectionDown));
+    animation_schedule(create_inbound_anim(ScrollDirectionUp));
   }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   int res = window_data_can_inc(&sample_data_arr);
   if (res == 0) {
-    Animation* out_anim = create_outbound_anim(ScrollDirectionDown);
-    animation_set_handlers(out_anim, (AnimationHandlers) {
-      .stopped = anim_during_scroll_inc,
-    }, NULL);
-    Animation* in_anim = create_inbound_anim(ScrollDirectionUp);
-    animation_schedule(animation_sequence_create(out_anim, in_anim, NULL));
+    animation_schedule(create_scroll_anim(ScrollDirectionDown));
   }
   else {
-    animation_schedule(create_inbound_anim(ScrollDirectionUp));
+    animation_schedule(create_inbound_anim(ScrollDirectionDown));
   }
 }
 
