@@ -23,3 +23,5 @@ typedef struct {
 WindowData* window_data_current(WindowDataArray*);
 int window_data_inc(WindowDataArray*);
 int window_data_dec(WindowDataArray*);
+int window_data_can_inc(WindowDataArray*);
+int window_data_can_dec(WindowDataArray*);

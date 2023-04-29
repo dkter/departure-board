@@ -70,21 +70,91 @@ static void redraw_all() {
   layer_mark_dirty(window_get_root_layer(s_window));
 }
 
+static Animation *create_anim_scroll_out(Layer *layer, uint32_t duration, int16_t dy) {
+  GPoint to_origin = GPoint(0, dy);
+  Animation *result = (Animation *) property_animation_create_bounds_origin(layer, NULL, &to_origin);
+  animation_set_duration(result, duration);
+  animation_set_curve(result, AnimationCurveLinear);
+  return result;
+}
+
+static Animation *create_anim_scroll_in(Layer *layer, uint32_t duration, int16_t dy) {
+  GPoint from_origin = GPoint(0, dy);
+  Animation *result = (Animation *) property_animation_create_bounds_origin(layer, &from_origin, &GPointZero);
+  animation_set_duration(result, duration);
+  animation_set_curve(result, AnimationCurveEaseOut);
+  return result;
+}
+
+static const uint32_t BACKGROUND_SCROLL_DURATION = 100 * 2;
+static const uint32_t SCROLL_DURATION = 130 * 2;
+static const int16_t SCROLL_DIST_OUT = 20;
+static const int16_t SCROLL_DIST_IN = 8;
+
+typedef enum {
+  ScrollDirectionDown,
+  ScrollDirectionUp,
+} ScrollDirection;
+
+static Animation *create_outbound_anim(ScrollDirection direction) {
+  const int16_t to_dy = (direction == ScrollDirectionDown) ? -SCROLL_DIST_OUT : SCROLL_DIST_OUT;
+
+  Animation *out_stop = create_anim_scroll_out(text_layer_get_layer(s_stop_layer), SCROLL_DURATION, to_dy);
+  Animation *out_dest = create_anim_scroll_out(text_layer_get_layer(s_dest_layer), SCROLL_DURATION, to_dy);
+  Animation *out_route = create_anim_scroll_out(s_route_layer, SCROLL_DURATION, to_dy);
+
+  return animation_spawn_create(out_stop, out_dest, out_route, NULL);
+}
+
+static Animation *create_inbound_anim(ScrollDirection direction) {
+  const int16_t from_dy = (direction == ScrollDirectionDown) ? -SCROLL_DIST_IN : SCROLL_DIST_IN;
+
+  Animation *in_stop = create_anim_scroll_in(text_layer_get_layer(s_stop_layer), SCROLL_DURATION, from_dy);
+  Animation *in_dest = create_anim_scroll_in(text_layer_get_layer(s_dest_layer), SCROLL_DURATION, from_dy);
+  Animation *in_route = create_anim_scroll_in(s_route_layer, SCROLL_DURATION, from_dy);
+
+  return animation_spawn_create(in_stop, in_dest, in_route, NULL);
+}
+
+static void anim_during_scroll_inc(Animation *animation, bool finished, void *context) {
+  window_data_inc(&sample_data_arr);
+}
+
+static void anim_during_scroll_dec(Animation *animation, bool finished, void *context) {
+  window_data_dec(&sample_data_arr);
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(s_time_layer, "Select");
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  int res = window_data_dec(&sample_data_arr);
+  int res = window_data_can_dec(&sample_data_arr);
   if (res == 0) {
-    redraw_all();
+    Animation* out_anim = create_outbound_anim(ScrollDirectionUp);
+    animation_set_handlers(out_anim, (AnimationHandlers) {
+      .stopped = anim_during_scroll_dec,
+    }, NULL);
+    Animation* in_anim = create_inbound_anim(ScrollDirectionDown);
+    animation_schedule(animation_sequence_create(out_anim, in_anim, NULL));
+  }
+  else {
+    animation_schedule(create_inbound_anim(ScrollDirectionDown));
   }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  int res = window_data_inc(&sample_data_arr);
+  int res = window_data_can_inc(&sample_data_arr);
   if (res == 0) {
-    redraw_all();
+    Animation* out_anim = create_outbound_anim(ScrollDirectionDown);
+    animation_set_handlers(out_anim, (AnimationHandlers) {
+      .stopped = anim_during_scroll_inc,
+    }, NULL);
+    Animation* in_anim = create_inbound_anim(ScrollDirectionUp);
+    animation_schedule(animation_sequence_create(out_anim, in_anim, NULL));
+  }
+  else {
+    animation_schedule(create_inbound_anim(ScrollDirectionUp));
   }
 }
 
