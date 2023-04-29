@@ -4,6 +4,7 @@
 #define RIGHT_BAR_WIDTH 50
 #define RIGHT_MARGIN 5
 #define SPACE 5
+#define DELTA 13
 
 static Window *s_window;
 static TextLayer *s_time_layer;
@@ -92,13 +93,15 @@ static const uint32_t BACKGROUND_SCROLL_DURATION = 100 * 2;
 static const uint32_t SCROLL_DURATION = 130 * 2;
 static const int16_t SCROLL_DIST_OUT = 20;
 static const int16_t SCROLL_DIST_IN = 8;
+static const uint32_t VEHICLE_SCROLL_DURATION = 340;
+static const int16_t VEHICLE_SCROLL_DIST = 60;
 
 typedef enum {
   ScrollDirectionDown,
   ScrollDirectionUp,
 } ScrollDirection;
 
-static Animation *create_outbound_anim(ScrollDirection direction) {
+static Animation *create_text_outbound_anim(ScrollDirection direction) {
   const int16_t to_dy = (direction == ScrollDirectionDown) ? -SCROLL_DIST_OUT : SCROLL_DIST_OUT;
 
   Animation *out_stop = create_anim_scroll_out(text_layer_get_layer(s_stop_layer), SCROLL_DURATION, to_dy);
@@ -108,7 +111,7 @@ static Animation *create_outbound_anim(ScrollDirection direction) {
   return animation_spawn_create(out_stop, out_dest, out_route, NULL);
 }
 
-static Animation *create_inbound_anim(ScrollDirection direction) {
+static Animation *create_text_inbound_anim(ScrollDirection direction) {
   const int16_t from_dy = (direction == ScrollDirectionDown) ? -SCROLL_DIST_IN : SCROLL_DIST_IN;
 
   Animation *in_stop = create_anim_scroll_in(text_layer_get_layer(s_stop_layer), SCROLL_DURATION, from_dy);
@@ -116,6 +119,28 @@ static Animation *create_inbound_anim(ScrollDirection direction) {
   Animation *in_route = create_anim_scroll_in(s_route_layer, SCROLL_DURATION, from_dy);
 
   return animation_spawn_create(in_stop, in_dest, in_route, NULL);
+}
+
+static Animation *create_vehicle_outbound_anim(ScrollDirection direction) {
+  const int16_t to_dy = (direction == ScrollDirectionDown) ? -VEHICLE_SCROLL_DIST : VEHICLE_SCROLL_DIST;
+
+  GPoint to_origin = GPoint(0, to_dy);
+  Animation *anim = (Animation *) property_animation_create_bounds_origin(s_vehicle_layer, NULL, &to_origin);
+  animation_set_duration(anim, VEHICLE_SCROLL_DURATION);
+  animation_set_curve(anim, AnimationCurveLinear);
+
+  return anim;
+}
+
+static Animation *create_vehicle_inbound_anim(ScrollDirection direction) {
+  const int16_t from_dy = (direction == ScrollDirectionDown) ? -VEHICLE_SCROLL_DIST : VEHICLE_SCROLL_DIST;
+
+  GPoint from_origin = GPoint(0, from_dy);
+  Animation *anim = (Animation *) property_animation_create_bounds_origin(s_vehicle_layer, &from_origin, NULL);
+  animation_set_duration(anim, VEHICLE_SCROLL_DURATION);
+  animation_set_curve(anim, AnimationCurveEaseOut);
+
+  return anim;
 }
 
 static void anim_during_scroll_inc(Animation *animation, bool finished, void *context) {
@@ -128,14 +153,44 @@ static void anim_during_scroll_dec(Animation *animation, bool finished, void *co
   redraw_all();
 }
 
+static void open_door_frame_handler(void* context) {
+  if (s_vehicle_frame_index < (int)gdraw_command_sequence_get_num_frames(s_vehicle_sequence) - 1) {
+    s_vehicle_frame_index += 1;
+    layer_mark_dirty(s_vehicle_layer);
+    app_timer_register(DELTA, open_door_frame_handler, NULL);
+  }
+}
+
+static void close_door_frame_handler(void* context) {
+  if (s_vehicle_frame_index > 0) {
+    s_vehicle_frame_index -= 1;
+    layer_mark_dirty(s_vehicle_layer);
+    app_timer_register(DELTA, close_door_frame_handler, NULL);
+  }
+}
+
+static void _open_door_frame_handler(Animation* animation, bool finished, void* context) {
+  open_door_frame_handler(context);
+}
+
 static Animation *create_scroll_anim(ScrollDirection direction) {
   ScrollDirection opposite_direction = (direction == ScrollDirectionDown) ? ScrollDirectionUp : ScrollDirectionDown;
-  Animation* out_anim = create_outbound_anim(direction);
+  Animation* out_anim = create_text_outbound_anim(direction);
   animation_set_handlers(out_anim, (AnimationHandlers) {
     .stopped = (direction == ScrollDirectionDown) ? anim_during_scroll_inc : anim_during_scroll_dec,
   }, NULL);
-  Animation* in_anim = create_inbound_anim(opposite_direction);
-  return animation_sequence_create(out_anim, in_anim, NULL);
+  app_timer_register(0, close_door_frame_handler, NULL);
+  Animation* in_anim = create_text_inbound_anim(opposite_direction);
+  animation_set_handlers(in_anim, (AnimationHandlers) {
+    .stopped = _open_door_frame_handler,
+  }, NULL);
+  Animation* vehicle_out_anim = create_vehicle_outbound_anim(direction);
+  Animation* vehicle_in_anim = create_vehicle_inbound_anim(opposite_direction);
+  Animation* sequence = animation_spawn_create(
+    animation_sequence_create(out_anim, in_anim, NULL),
+    animation_sequence_create(vehicle_out_anim, vehicle_in_anim, NULL), NULL);
+  animation_set_delay(sequence, 200);
+  return sequence;
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -148,7 +203,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     animation_schedule(create_scroll_anim(ScrollDirectionUp));
   }
   else {
-    animation_schedule(create_inbound_anim(ScrollDirectionUp));
+    animation_schedule(create_text_inbound_anim(ScrollDirectionUp));
   }
 }
 
@@ -158,7 +213,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     animation_schedule(create_scroll_anim(ScrollDirectionDown));
   }
   else {
-    animation_schedule(create_inbound_anim(ScrollDirectionDown));
+    animation_schedule(create_text_inbound_anim(ScrollDirectionDown));
   }
 }
 
