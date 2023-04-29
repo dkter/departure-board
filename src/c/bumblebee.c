@@ -19,26 +19,73 @@ static char time_text[8];
 static char stop_text[32];
 static char dest_text[32];
 
-static WindowData sample_data = {
-  .time = 10,
-  .unit = "min",
-  .stop_name = "Dundas West Station",
-  .dest_name = "Distillery",
-  .route_number = "504A",
-  .route_name = "King",
-  .vehicle_type = STREETCAR,
+static WindowData sample_data__arr[] = {
+  {
+    .time = 10,
+    .unit = "min",
+    .stop_name = "Dundas West Station",
+    .dest_name = "Distillery",
+    .route_number = "504A",
+    .route_name = "King",
+    .vehicle_type = STREETCAR,
+  },
+  {
+    .time = 6,
+    .unit = "min",
+    .stop_name = "Dundas West Station",
+    .dest_name = "Broadview Station",
+    .route_number = "505",
+    .route_name = "Dundas",
+    .vehicle_type = STREETCAR,
+  }
 };
+static WindowDataArray sample_data_arr = {
+  .array = sample_data__arr,
+  .data_len = 2,
+  .data_index = 0,
+};
+
+static void set_time_text(WindowData* data) {
+  snprintf(time_text, sizeof(time_text), "%d", data->time);
+  text_layer_set_text(s_time_layer, time_text);
+}
+
+static void set_stop_text(WindowData* data) {
+  snprintf(stop_text, sizeof(stop_text), "at %s", data->stop_name);
+  text_layer_set_text(s_stop_layer, stop_text);
+}
+
+static void set_dest_text(WindowData* data) {
+  snprintf(dest_text, sizeof(dest_text), "to %s", data->dest_name);
+  text_layer_set_text(s_dest_layer, dest_text);
+}
+
+static void redraw_all() {
+  WindowData* data = window_data_current(window_get_user_data(s_window));
+  set_time_text(data);
+  text_layer_set_text(s_unit_layer, data->unit);
+  set_stop_text(data);
+  set_dest_text(data);
+
+  layer_mark_dirty(window_get_root_layer(s_window));
+}
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(s_time_layer, "Select");
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(s_time_layer, "Up");
+  int res = window_data_dec(&sample_data_arr);
+  if (res == 0) {
+    redraw_all();
+  }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(s_time_layer, "Down");
+  int res = window_data_inc(&sample_data_arr);
+  if (res == 0) {
+    redraw_all();
+  }
 }
 
 static void click_config_provider(void *context) {
@@ -66,7 +113,7 @@ static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void route_layer_update_proc(Layer *layer, GContext *ctx) {
-  WindowData* data = window_get_user_data(s_window);
+  WindowData* data = window_data_current(window_get_user_data(s_window));
 
   GRect bounds = layer_get_bounds(layer);
   GSize number_text_size = graphics_text_layout_get_content_size(
@@ -99,9 +146,8 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void create_time_layer(GRect bounds, WindowData* data) {
-  snprintf(time_text, sizeof(time_text), "%d", data->time);
   s_time_layer = text_layer_create(GRect(0, 0, bounds.size.w - RIGHT_BAR_WIDTH - 2, 64));
-  text_layer_set_text(s_time_layer, time_text);
+  set_time_text(data);
   text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS));
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentRight);
 }
@@ -120,17 +166,15 @@ static void create_next_layer(GRect bounds, WindowData* data) {
 }
 
 static void create_stop_layer(GRect bounds, WindowData* data) {
-  snprintf(stop_text, sizeof(stop_text), "at %s", data->stop_name);
   s_stop_layer = text_layer_create(GRect(0, 132, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 72));
-  text_layer_set_text(s_stop_layer, stop_text);
+  set_stop_text(data);
   text_layer_set_font(s_stop_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   text_layer_set_text_alignment(s_stop_layer, GTextAlignmentRight);
 }
 
 static void create_dest_layer(GRect bounds, WindowData* data) {
-  snprintf(dest_text, sizeof(dest_text), "to %s", data->dest_name);
   s_dest_layer = text_layer_create(GRect(0, 96, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 36));
-  text_layer_set_text(s_dest_layer, dest_text);
+  set_dest_text(data);
   text_layer_set_font(s_dest_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_dest_layer, GTextAlignmentRight);
 }
@@ -148,7 +192,7 @@ static void create_vehicle_background(GRect bounds) {
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
-  WindowData* data = window_get_user_data(window);
+  WindowData* data = window_data_current(window_get_user_data(window));
 
   create_time_layer(bounds, data);
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
@@ -192,7 +236,7 @@ static void init(void) {
 
   s_window = window_create();
   window_set_click_config_provider(s_window, click_config_provider);
-  window_set_user_data(s_window, &sample_data);
+  window_set_user_data(s_window, &sample_data_arr);
   window_set_window_handlers(s_window, (WindowHandlers) {
     .load = window_load,
     .unload = window_unload,
