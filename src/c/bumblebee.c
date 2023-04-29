@@ -13,6 +13,7 @@ static TextLayer *s_unit_layer;
 static TextLayer *s_next_layer;
 static Layer *s_route_layer;
 static Layer *s_vehicle_background_layer;
+static Layer *s_vehicle_layer;
 static GDrawCommandSequence* s_vehicle_sequence;
 static int s_vehicle_frame_index = 9;
 
@@ -165,15 +166,19 @@ static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
-static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
+static void vehicle_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_fill_color(ctx, GColorRed);
-  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   GPoint vehicle_origin = GPoint(bounds.origin.x, bounds.origin.y + 40);
   GDrawCommandFrame* frame = gdraw_command_sequence_get_frame_by_index(s_vehicle_sequence, s_vehicle_frame_index);
   if (frame) {
     gdraw_command_frame_draw(ctx, s_vehicle_sequence, frame, vehicle_origin);
   }
+}
+
+static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
   // overhead wire!
   graphics_context_set_stroke_color(ctx, GColorBlack);
@@ -257,6 +262,11 @@ static void create_route_layer(GRect bounds) {
   layer_set_update_proc(s_route_layer, route_layer_update_proc);
 }
 
+static void create_vehicle(GRect bounds) {
+  s_vehicle_layer = layer_create(GRect(bounds.size.w - RIGHT_BAR_WIDTH, 0, bounds.size.w, bounds.size.h));
+  layer_set_update_proc(s_vehicle_layer, vehicle_update_proc);
+}
+
 static void create_vehicle_background(GRect bounds) {
   s_vehicle_background_layer = layer_create(GRect(bounds.size.w - RIGHT_BAR_WIDTH, 0, bounds.size.w, bounds.size.h));
   layer_set_update_proc(s_vehicle_background_layer, vehicle_background_update_proc);
@@ -288,6 +298,10 @@ static void window_load(Window *window) {
   layer_add_child(window_layer, s_vehicle_background_layer);
   layer_mark_dirty(s_vehicle_background_layer);
 
+  create_vehicle(bounds);
+  layer_add_child(window_layer, s_vehicle_layer);
+  layer_mark_dirty(s_vehicle_layer);
+
   create_route_layer(bounds);
   layer_add_child(window_layer, s_route_layer);
   layer_mark_dirty(s_route_layer);
@@ -300,6 +314,7 @@ static void window_unload(Window *window) {
   text_layer_destroy(s_stop_layer);
   text_layer_destroy(s_dest_layer);
   layer_destroy(s_vehicle_background_layer);
+  layer_destroy(s_vehicle_layer);
   gdraw_command_sequence_destroy(s_vehicle_sequence);
   layer_destroy(s_route_layer);
 }
