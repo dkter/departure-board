@@ -60,8 +60,6 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
     bounds.origin.y,
     number_text_size.w + 10,
     bounds.size.h);
-  //GRect pill_bounds = GRect(bounds.origin.x + 10, bounds.origin.y, number_text_size.w + 10, bounds.size.h);
-  //GRect text_bounds = GRect(bounds.origin.x + 15, bounds.origin.y, number_text_size.w + 20, bounds.size.h);
   GRect number_text_bounds = GRect(
     pill_bounds.origin.x + 5,
     bounds.origin.y,
@@ -73,7 +71,6 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_text_color(ctx, GColorWhite);
   graphics_draw_text(ctx, number, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), number_text_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
 
-  //GRect name_bounds = GRect(pill_bounds.origin.x + pill_bounds.size.w + SPACE, bounds.origin.y, bounds.size.w - pill_bounds.size.w, bounds.size.h);
   graphics_context_set_text_color(ctx, GColorBlack);
   graphics_draw_text(ctx, name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), name_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
 }
