@@ -15,6 +15,7 @@ static TextLayer *s_next_layer;
 static Layer *s_route_layer;
 static Layer *s_vehicle_background_layer;
 static Layer *s_vehicle_layer;
+static Layer *s_description_layer;
 static GDrawCommandSequence* s_vehicle_sequence;
 static int s_vehicle_frame_index = 9;
 
@@ -91,8 +92,8 @@ static Animation *create_anim_scroll_in(Layer *layer, uint32_t duration, int16_t
 
 static const uint32_t BACKGROUND_SCROLL_DURATION = 100 * 2;
 static const uint32_t SCROLL_DURATION = 130 * 2;
-static const int16_t SCROLL_DIST_OUT = 20;
-static const int16_t SCROLL_DIST_IN = 8;
+static const int16_t SCROLL_DIST_OUT = 40;
+static const int16_t SCROLL_DIST_IN = 16;
 static const uint32_t VEHICLE_SCROLL_DURATION = 260;
 static const int16_t VEHICLE_SCROLL_DIST = 60;
 
@@ -104,21 +105,15 @@ typedef enum {
 static Animation *create_text_outbound_anim(ScrollDirection direction) {
   const int16_t to_dy = (direction == ScrollDirectionDown) ? -SCROLL_DIST_OUT : SCROLL_DIST_OUT;
 
-  Animation *out_stop = create_anim_scroll_out(text_layer_get_layer(s_stop_layer), SCROLL_DURATION, to_dy);
-  Animation *out_dest = create_anim_scroll_out(text_layer_get_layer(s_dest_layer), SCROLL_DURATION, to_dy);
-  Animation *out_route = create_anim_scroll_out(s_route_layer, SCROLL_DURATION, to_dy);
-
-  return animation_spawn_create(out_stop, out_dest, out_route, NULL);
+  Animation *out_text = create_anim_scroll_out(s_description_layer, SCROLL_DURATION, to_dy);
+  return out_text;
 }
 
 static Animation *create_text_inbound_anim(ScrollDirection direction) {
   const int16_t from_dy = (direction == ScrollDirectionDown) ? -SCROLL_DIST_IN : SCROLL_DIST_IN;
 
-  Animation *in_stop = create_anim_scroll_in(text_layer_get_layer(s_stop_layer), SCROLL_DURATION, from_dy);
-  Animation *in_dest = create_anim_scroll_in(text_layer_get_layer(s_dest_layer), SCROLL_DURATION, from_dy);
-  Animation *in_route = create_anim_scroll_in(s_route_layer, SCROLL_DURATION, from_dy);
-
-  return animation_spawn_create(in_stop, in_dest, in_route, NULL);
+  Animation *in_text = create_anim_scroll_in(s_description_layer, SCROLL_DURATION, from_dy);
+  return in_text;
 }
 
 static Animation *create_vehicle_outbound_anim(ScrollDirection direction) {
@@ -280,6 +275,9 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
   graphics_draw_text(ctx, data->route_name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), name_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
 }
 
+static void description_layer_update_proc(Layer *layer, GContext *ctx) {
+}
+
 static void create_time_layer(GRect bounds, WindowData* data) {
   s_time_layer = text_layer_create(GRect(0, 0, bounds.size.w - RIGHT_BAR_WIDTH - 2, 64));
   set_time_text(data);
@@ -301,21 +299,21 @@ static void create_next_layer(GRect bounds, WindowData* data) {
 }
 
 static void create_stop_layer(GRect bounds, WindowData* data) {
-  s_stop_layer = text_layer_create(GRect(0, 132, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 72));
+  s_stop_layer = text_layer_create(GRect(0, 68, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 72));
   set_stop_text(data);
   text_layer_set_font(s_stop_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   text_layer_set_text_alignment(s_stop_layer, GTextAlignmentRight);
 }
 
 static void create_dest_layer(GRect bounds, WindowData* data) {
-  s_dest_layer = text_layer_create(GRect(0, 96, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 36));
+  s_dest_layer = text_layer_create(GRect(0, 32, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 36));
   set_dest_text(data);
   text_layer_set_font(s_dest_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_dest_layer, GTextAlignmentRight);
 }
 
 static void create_route_layer(GRect bounds) {
-  s_route_layer = layer_create(GRect(0, 64, bounds.size.w - RIGHT_BAR_WIDTH, 32));
+  s_route_layer = layer_create(GRect(0, 0, bounds.size.w - RIGHT_BAR_WIDTH, 32));
   layer_set_update_proc(s_route_layer, route_layer_update_proc);
 }
 
@@ -329,6 +327,23 @@ static void create_vehicle_background(GRect bounds) {
   layer_set_update_proc(s_vehicle_background_layer, vehicle_background_update_proc);
 }
 
+static void create_description(GRect bounds, WindowData* data) {
+  s_description_layer = layer_create(
+    GRect(bounds.origin.x, 64, bounds.size.w - RIGHT_BAR_WIDTH, bounds.size.h - 64));
+  layer_set_update_proc(s_description_layer, description_layer_update_proc);
+
+  create_next_layer(bounds, data);
+  layer_add_child(s_description_layer, text_layer_get_layer(s_next_layer));
+
+  create_stop_layer(bounds, data);
+  layer_add_child(s_description_layer, text_layer_get_layer(s_stop_layer));
+  text_layer_enable_screen_text_flow_and_paging(s_stop_layer, 5);
+
+  create_dest_layer(bounds, data);
+  layer_add_child(s_description_layer, text_layer_get_layer(s_dest_layer));
+  text_layer_enable_screen_text_flow_and_paging(s_dest_layer, 5);
+}
+
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -340,16 +355,9 @@ static void window_load(Window *window) {
   create_unit_layer(bounds, data);
   layer_add_child(window_layer, text_layer_get_layer(s_unit_layer));
 
-  create_next_layer(bounds, data);
-  layer_add_child(window_layer, text_layer_get_layer(s_next_layer));
-
-  create_stop_layer(bounds, data);
-  layer_add_child(window_layer, text_layer_get_layer(s_stop_layer));
-  text_layer_enable_screen_text_flow_and_paging(s_stop_layer, 5);
-
-  create_dest_layer(bounds, data);
-  layer_add_child(window_layer, text_layer_get_layer(s_dest_layer));
-  text_layer_enable_screen_text_flow_and_paging(s_dest_layer, 5);
+  create_description(bounds, data);
+  layer_add_child(window_layer, s_description_layer);
+  layer_mark_dirty(s_description_layer);
 
   create_vehicle_background(bounds);
   layer_add_child(window_layer, s_vehicle_background_layer);
@@ -360,7 +368,7 @@ static void window_load(Window *window) {
   layer_mark_dirty(s_vehicle_layer);
 
   create_route_layer(bounds);
-  layer_add_child(window_layer, s_route_layer);
+  layer_add_child(s_description_layer, s_route_layer);
   layer_mark_dirty(s_route_layer);
 }
 
