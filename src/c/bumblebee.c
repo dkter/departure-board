@@ -39,6 +39,15 @@ static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
   // gdraw_command_image_draw(ctx, s_vehicle_image, GPoint(0, 0));
   GPoint vehicle_origin = GPoint(bounds.origin.x, bounds.origin.y + 40);
   gdraw_command_image_draw(ctx, s_vehicle_image, vehicle_origin);
+
+  // overhead wire!
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+  graphics_context_set_stroke_width(ctx, 1);
+  graphics_draw_line(ctx, GPoint(
+    bounds.origin.x + 32, 0
+  ), GPoint(
+    bounds.origin.x + 32, bounds.size.h
+  ));
 }
 
 static void route_layer_update_proc(Layer *layer, GContext *ctx) {
