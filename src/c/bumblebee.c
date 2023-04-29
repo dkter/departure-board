@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include "data.h"
 
 #define RIGHT_BAR_WIDTH 50
 #define RIGHT_MARGIN 5
@@ -13,6 +14,20 @@ static TextLayer *s_next_layer;
 static Layer *s_route_layer;
 static Layer *s_vehicle_background_layer;
 static GDrawCommandImage* s_vehicle_image;
+
+static char time_text[8];
+static char stop_text[32];
+static char dest_text[32];
+
+static WindowData sample_data = {
+  .time = 10,
+  .unit = "min",
+  .stop_name = "Dundas West Station",
+  .dest_name = "Distillery",
+  .route_number = "504A",
+  .route_name = "King",
+  .vehicle_type = STREETCAR,
+};
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(s_time_layer, "Select");
@@ -51,14 +66,13 @@ static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void route_layer_update_proc(Layer *layer, GContext *ctx) {
-  const char number[] = "504A";
-  const char name[] = "King";
+  WindowData* data = window_get_user_data(s_window);
 
   GRect bounds = layer_get_bounds(layer);
   GSize number_text_size = graphics_text_layout_get_content_size(
-    number, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
+    data->route_number, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
   GSize name_text_size = graphics_text_layout_get_content_size(
-    name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentRight);
+    data->route_name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentRight);
   GRect name_bounds = GRect(
     bounds.origin.x + bounds.size.w - name_text_size.w - RIGHT_MARGIN,
     bounds.origin.y,
@@ -78,43 +92,45 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_fill_color(ctx, GColorRed);
   graphics_fill_rect(ctx, pill_bounds, 10, GCornersAll);
   graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, number, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), number_text_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
+  graphics_draw_text(ctx, data->route_number, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), number_text_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
 
   graphics_context_set_text_color(ctx, GColorBlack);
-  graphics_draw_text(ctx, name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), name_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
+  graphics_draw_text(ctx, data->route_name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), name_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
 }
 
-static void create_time_layer(GRect bounds) {
+static void create_time_layer(GRect bounds, WindowData* data) {
+  snprintf(time_text, sizeof(time_text), "%d", data->time);
   s_time_layer = text_layer_create(GRect(0, 0, bounds.size.w - RIGHT_BAR_WIDTH - 2, 64));
-  text_layer_set_text(s_time_layer, "10");
+  text_layer_set_text(s_time_layer, time_text);
   text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS));
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentRight);
 }
 
-static void create_unit_layer(GRect bounds) {
+static void create_unit_layer(GRect bounds, WindowData* data) {
   s_unit_layer = text_layer_create(GRect(0, 44, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 120));
-  text_layer_set_text(s_unit_layer, "min");
-  //text_layer_set_font(s_unit_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS));
+  text_layer_set_text(s_unit_layer, data->unit);
   text_layer_set_text_alignment(s_unit_layer, GTextAlignmentRight);
 }
 
-static void create_next_layer(GRect bounds) {
+static void create_next_layer(GRect bounds, WindowData* data) {
   s_next_layer = text_layer_create(GRect(bounds.size.w - RIGHT_BAR_WIDTH - 10 - 72, 5, 32, 42));
   text_layer_set_text(s_next_layer, "");
   text_layer_set_font(s_next_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_next_layer, GTextAlignmentLeft);
 }
 
-static void create_stop_layer(GRect bounds) {
+static void create_stop_layer(GRect bounds, WindowData* data) {
+  snprintf(stop_text, sizeof(stop_text), "at %s", data->stop_name);
   s_stop_layer = text_layer_create(GRect(0, 132, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 72));
-  text_layer_set_text(s_stop_layer, "at Dundas West Station");
+  text_layer_set_text(s_stop_layer, stop_text);
   text_layer_set_font(s_stop_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   text_layer_set_text_alignment(s_stop_layer, GTextAlignmentRight);
 }
 
-static void create_dest_layer(GRect bounds) {
+static void create_dest_layer(GRect bounds, WindowData* data) {
+  snprintf(dest_text, sizeof(dest_text), "to %s", data->dest_name);
   s_dest_layer = text_layer_create(GRect(0, 96, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 36));
-  text_layer_set_text(s_dest_layer, "to Distillery");
+  text_layer_set_text(s_dest_layer, dest_text);
   text_layer_set_font(s_dest_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_dest_layer, GTextAlignmentRight);
 }
@@ -132,21 +148,22 @@ static void create_vehicle_background(GRect bounds) {
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
+  WindowData* data = window_get_user_data(window);
 
-  create_time_layer(bounds);
+  create_time_layer(bounds, data);
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 
-  create_unit_layer(bounds);
+  create_unit_layer(bounds, data);
   layer_add_child(window_layer, text_layer_get_layer(s_unit_layer));
 
-  create_next_layer(bounds);
+  create_next_layer(bounds, data);
   layer_add_child(window_layer, text_layer_get_layer(s_next_layer));
 
-  create_stop_layer(bounds);
+  create_stop_layer(bounds, data);
   layer_add_child(window_layer, text_layer_get_layer(s_stop_layer));
   text_layer_enable_screen_text_flow_and_paging(s_stop_layer, 5);
 
-  create_dest_layer(bounds);
+  create_dest_layer(bounds, data);
   layer_add_child(window_layer, text_layer_get_layer(s_dest_layer));
   text_layer_enable_screen_text_flow_and_paging(s_dest_layer, 5);
 
@@ -175,6 +192,7 @@ static void init(void) {
 
   s_window = window_create();
   window_set_click_config_provider(s_window, click_config_provider);
+  window_set_user_data(s_window, &sample_data);
   window_set_window_handlers(s_window, (WindowHandlers) {
     .load = window_load,
     .unload = window_unload,
