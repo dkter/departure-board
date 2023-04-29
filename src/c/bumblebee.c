@@ -51,7 +51,7 @@ static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void route_layer_update_proc(Layer *layer, GContext *ctx) {
-  const char number[] = "504B";
+  const char number[] = "504A";
   const char name[] = "King";
 
   GRect bounds = layer_get_bounds(layer);
@@ -114,7 +114,7 @@ static void create_stop_layer(GRect bounds) {
 
 static void create_dest_layer(GRect bounds) {
   s_dest_layer = text_layer_create(GRect(0, 96, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 36));
-  text_layer_set_text(s_dest_layer, "to Broadview Station");
+  text_layer_set_text(s_dest_layer, "to Distillery");
   text_layer_set_font(s_dest_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_dest_layer, GTextAlignmentRight);
 }
