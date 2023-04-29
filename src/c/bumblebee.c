@@ -120,10 +120,12 @@ static Animation *create_inbound_anim(ScrollDirection direction) {
 
 static void anim_during_scroll_inc(Animation *animation, bool finished, void *context) {
   window_data_inc(&sample_data_arr);
+  redraw_all();
 }
 
 static void anim_during_scroll_dec(Animation *animation, bool finished, void *context) {
   window_data_dec(&sample_data_arr);
+  redraw_all();
 }
 
 static Animation *create_scroll_anim(ScrollDirection direction) {
