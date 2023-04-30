@@ -78,7 +78,7 @@ static Animation *create_anim_scroll_out(Layer *layer, uint32_t duration, int16_
   GPoint to_origin = GPoint(0, dy);
   Animation *result = (Animation *) property_animation_create_bounds_origin(layer, NULL, &to_origin);
   animation_set_duration(result, duration);
-  animation_set_curve(result, AnimationCurveLinear);
+  animation_set_curve(result, AnimationCurveEaseIn);
   return result;
 }
 
@@ -94,7 +94,7 @@ static const uint32_t BACKGROUND_SCROLL_DURATION = 100 * 2;
 static const uint32_t SCROLL_DURATION = 130 * 2;
 static const int16_t SCROLL_DIST_OUT = 40;
 static const int16_t SCROLL_DIST_IN = 16;
-static const uint32_t VEHICLE_SCROLL_DURATION = 260;
+static const uint32_t VEHICLE_SCROLL_DURATION = 240;
 static const int16_t VEHICLE_SCROLL_DIST = 60;
 
 typedef enum {
@@ -181,9 +181,11 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
   }, NULL);
   Animation* vehicle_out_anim = create_vehicle_outbound_anim(direction);
   Animation* vehicle_in_anim = create_vehicle_inbound_anim(opposite_direction);
+  Animation* vehicle_sequence = animation_sequence_create(vehicle_out_anim, vehicle_in_anim, NULL);
+  animation_set_delay(vehicle_sequence, 200);
   Animation* sequence = animation_spawn_create(
     animation_sequence_create(out_anim, in_anim, NULL),
-    animation_sequence_create(vehicle_out_anim, vehicle_in_anim, NULL), NULL);
+    vehicle_sequence, NULL);
   animation_set_delay(sequence, 200);
   return sequence;
 }
