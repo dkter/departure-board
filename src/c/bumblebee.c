@@ -267,20 +267,23 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   GSize number_text_size = graphics_text_layout_get_content_size(
     data->route_number, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
+  uint16_t pill_width = data->shape == CIRCLE ? bounds.size.h : number_text_size.w + 10;
   GSize name_text_size = graphics_text_layout_get_content_size(
-    data->route_name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentRight);
+    data->route_name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), 
+    GRect(bounds.origin.x + pill_width + SPACE, bounds.origin.y, bounds.size.w - pill_width - SPACE - RIGHT_MARGIN, bounds.size.h),
+    GTextOverflowModeTrailingEllipsis, GTextAlignmentRight);
   GRect name_bounds = GRect(
     bounds.origin.x + bounds.size.w - name_text_size.w - RIGHT_MARGIN,
     bounds.origin.y,
     name_text_size.w,
     bounds.size.h);
   GRect pill_bounds = GRect(
-    name_bounds.origin.x - number_text_size.w - SPACE - 10,
+    name_bounds.origin.x - pill_width - SPACE,
     bounds.origin.y,
-    number_text_size.w + 10,
+    pill_width,
     bounds.size.h);
   GRect number_text_bounds = GRect(
-    pill_bounds.origin.x + 5,
+    pill_bounds.origin.x + (pill_width - number_text_size.w) / 2,
     bounds.origin.y,
     number_text_size.w,
     bounds.size.h);
