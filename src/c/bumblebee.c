@@ -32,6 +32,8 @@ static WindowData sample_data__arr[] = {
     .route_number = "504A",
     .route_name = "King",
     .vehicle_type = STREETCAR,
+    .colour = RED,
+    .shape = ROUNDRECT,
   },
   {
     .time = 6,
@@ -41,11 +43,24 @@ static WindowData sample_data__arr[] = {
     .route_number = "505",
     .route_name = "Dundas",
     .vehicle_type = STREETCAR,
-  }
+    .colour = RED,
+    .shape = ROUNDRECT,
+  },
+  {
+    .time = 1,
+    .unit = "min",
+    .stop_name = "Dundas West Station",
+    .dest_name = "Kipling",
+    .route_number = "2",
+    .route_name = "Bloor-Danforth",
+    .vehicle_type = SUBWAY,
+    .colour = GREEN,
+    .shape = CIRCLE,
+  },
 };
 static WindowDataArray sample_data_arr = {
   .array = sample_data__arr,
-  .data_len = 2,
+  .data_len = 3,
   .data_index = 0,
 };
 
@@ -230,8 +245,10 @@ static void vehicle_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
+  WindowData* data = window_data_current(window_get_user_data(s_window));
+
   GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_context_set_fill_color(ctx, route_colour_to_gcolor(data->colour));
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
   // overhead wire!
@@ -268,8 +285,14 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
     number_text_size.w,
     bounds.size.h);
 
-  graphics_context_set_fill_color(ctx, GColorRed);
-  graphics_fill_rect(ctx, pill_bounds, 10, GCornersAll);
+  graphics_context_set_fill_color(ctx, route_colour_to_gcolor(data->colour));
+  if (data->shape == ROUNDRECT) {
+    graphics_fill_rect(ctx, pill_bounds, 10, GCornersAll);
+  } else if (data->shape == RECT) {
+    graphics_fill_rect(ctx, pill_bounds, 0, GCornerNone);
+  } else if (data->shape == CIRCLE) {
+    graphics_fill_rect(ctx, pill_bounds, 30, GCornersAll);
+  }
   graphics_context_set_text_color(ctx, GColorWhite);
   graphics_draw_text(ctx, data->route_number, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), number_text_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, 0);
 
