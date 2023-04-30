@@ -23,43 +23,8 @@ static char time_text[8];
 static char stop_text[32];
 static char dest_text[32];
 
-static WindowData sample_data__arr[] = {
-    {
-        .time = 10,
-        .unit = "min",
-        .stop_name = "Dundas West Station",
-        .dest_name = "Distillery",
-        .route_number = "504A",
-        .route_name = "King",
-        .vehicle_type = STREETCAR,
-        .colour = RED,
-        .shape = ROUNDRECT,
-    },
-    {
-        .time = 6,
-        .unit = "min",
-        .stop_name = "Dundas West Station",
-        .dest_name = "Broadview Station",
-        .route_number = "505",
-        .route_name = "Dundas",
-        .vehicle_type = STREETCAR,
-        .colour = RED,
-        .shape = ROUNDRECT,
-    },
-    {
-        .time = 1,
-        .unit = "min",
-        .stop_name = "Dundas West Station",
-        .dest_name = "Kipling",
-        .route_number = "2",
-        .route_name = "Bloor-Danforth",
-        .vehicle_type = SUBWAY,
-        .colour = GREEN,
-        .shape = CIRCLE,
-    },
-};
 static WindowDataArray sample_data_arr = {
-    .array = sample_data__arr,
+    .array = NULL,
     .data_len = 3,
     .data_index = 0,
 };
@@ -248,7 +213,7 @@ static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
     WindowData* data = window_data_current(window_get_user_data(s_window));
 
     GRect bounds = layer_get_bounds(layer);
-    graphics_context_set_fill_color(ctx, route_colour_to_gcolor(data->colour));
+    graphics_context_set_fill_color(ctx, data->color);
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
     // overhead wire!
@@ -288,7 +253,7 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
         number_text_size.w,
         bounds.size.h);
 
-    graphics_context_set_fill_color(ctx, route_colour_to_gcolor(data->colour));
+    graphics_context_set_fill_color(ctx, data->color);
     if (data->shape == ROUNDRECT) {
         graphics_fill_rect(ctx, pill_bounds, 10, GCornersAll);
     } else if (data->shape == RECT) {
@@ -413,6 +378,41 @@ static void window_unload(Window *window) {
 }
 
 static void init(void) {
+    sample_data_arr.array = malloc(sample_data_arr.data_len*sizeof(WindowData));
+    sample_data_arr.array[0] = (WindowData) {
+        .time = 10,
+        .unit = "min",
+        .stop_name = "Dundas West Station",
+        .dest_name = "Distillery",
+        .route_number = "504A",
+        .route_name = "King",
+        .vehicle_type = STREETCAR,
+        .color = GColorRed,
+        .shape = ROUNDRECT,
+    };
+    sample_data_arr.array[1] = (WindowData) {
+        .time = 6,
+        .unit = "min",
+        .stop_name = "Dundas West Station",
+        .dest_name = "Broadview Station",
+        .route_number = "505",
+        .route_name = "Dundas",
+        .vehicle_type = STREETCAR,
+        .color = GColorRed,
+        .shape = ROUNDRECT,
+        },
+    sample_data_arr.array[2] = (WindowData) {
+        .time = 1,
+        .unit = "min",
+        .stop_name = "Dundas West Station",
+        .dest_name = "Kipling",
+        .route_number = "2",
+        .route_name = "Bloor-Danforth",
+        .vehicle_type = SUBWAY,
+        .color = GColorGreen,
+        .shape = CIRCLE,
+    };
+
     s_vehicle_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
 
     s_window = window_create();
@@ -428,6 +428,7 @@ static void init(void) {
 
 static void deinit(void) {
     window_destroy(s_window);
+    free(sample_data_arr.array);
 }
 
 int main(void) {

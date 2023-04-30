@@ -37,11 +37,3 @@ int window_data_can_dec(WindowDataArray* array) {
         return 1;
     }
 }
-
-GColor route_colour_to_gcolor(RouteColour colour) {
-    switch (colour) {
-    case RED: return GColorRed;
-    case GREEN: return GColorGreen;
-    default: return GColorBlack;
-    }
-}

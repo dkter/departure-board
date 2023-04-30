@@ -6,11 +6,6 @@ typedef enum {
 } VehicleType;
 
 typedef enum {
-    RED,
-    GREEN,
-} RouteColour;
-
-typedef enum {
     ROUNDRECT,
     RECT,
     CIRCLE,
@@ -24,7 +19,7 @@ typedef struct {
     char* route_number;
     char* route_name;
     VehicleType vehicle_type;
-    RouteColour colour;
+    GColor color;
     RouteShape shape;
 } WindowData;
 
@@ -39,4 +34,3 @@ int window_data_inc(WindowDataArray*);
 int window_data_dec(WindowDataArray*);
 int window_data_can_inc(WindowDataArray*);
 int window_data_can_dec(WindowDataArray*);
-GColor route_colour_to_gcolor(RouteColour);
