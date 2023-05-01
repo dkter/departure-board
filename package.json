@@ -26,16 +26,6 @@
       "media": [
         {
           "type": "raw",
-          "name": "SUBWAY",
-          "file": "subway_small_pl.pdc"
-        },
-        {
-          "type": "raw",
-          "name": "STREETCAR",
-          "file": "streetcar_v.pdc"
-        },
-        {
-          "type": "raw",
           "name": "STREETCAR_ANIM",
           "file": "streetcar_frames.pdc"
         },
