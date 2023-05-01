@@ -312,11 +312,9 @@ static void create_description(GRect bounds, WindowData* data) {
 
     create_stop_layer(bounds, data);
     layer_add_child(s_description_layer, text_layer_get_layer(s_stop_layer));
-    text_layer_enable_screen_text_flow_and_paging(s_stop_layer, 5);
 
     create_dest_layer(bounds, data);
     layer_add_child(s_description_layer, text_layer_get_layer(s_dest_layer));
-    text_layer_enable_screen_text_flow_and_paging(s_dest_layer, 5);
 }
 
 static void window_load(Window *window) {
@@ -332,6 +330,8 @@ static void window_load(Window *window) {
 
     create_description(bounds, data);
     layer_add_child(window_layer, s_description_layer);
+    text_layer_enable_screen_text_flow_and_paging(s_stop_layer, 5);
+    text_layer_enable_screen_text_flow_and_paging(s_dest_layer, 5);
     layer_mark_dirty(s_description_layer);
 
     create_vehicle_background(bounds);
