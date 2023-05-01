@@ -14,7 +14,6 @@ static TextLayer *s_time_layer;
 static TextLayer *s_stop_layer;
 static TextLayer *s_dest_layer;
 static TextLayer *s_unit_layer;
-static TextLayer *s_next_layer;
 static Layer *s_route_layer;
 static Layer *s_vehicle_background_layer;
 static Layer *s_vehicle_layer;
@@ -302,13 +301,6 @@ static void create_unit_layer(GRect bounds, WindowData* data) {
     text_layer_set_text_alignment(s_unit_layer, GTextAlignmentRight);
 }
 
-static void create_next_layer(GRect bounds, WindowData* data) {
-    s_next_layer = text_layer_create(GRect(bounds.size.w - RIGHT_BAR_WIDTH - 10 - 72, 5, 32, 42));
-    text_layer_set_text(s_next_layer, "");
-    text_layer_set_font(s_next_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
-    text_layer_set_text_alignment(s_next_layer, GTextAlignmentLeft);
-}
-
 static void create_stop_layer(GRect bounds, WindowData* data) {
     s_stop_layer = text_layer_create(GRect(0, 68, bounds.size.w - RIGHT_BAR_WIDTH - RIGHT_MARGIN, 72));
     set_stop_text(data);
@@ -342,9 +334,6 @@ static void create_description(GRect bounds, WindowData* data) {
     s_description_layer = layer_create(
         GRect(bounds.origin.x, 64, bounds.size.w - RIGHT_BAR_WIDTH, bounds.size.h - 64));
     layer_set_update_proc(s_description_layer, description_layer_update_proc);
-
-    create_next_layer(bounds, data);
-    layer_add_child(s_description_layer, text_layer_get_layer(s_next_layer));
 
     create_stop_layer(bounds, data);
     layer_add_child(s_description_layer, text_layer_get_layer(s_stop_layer));
@@ -387,7 +376,6 @@ static void window_load(Window *window) {
 static void window_unload(Window *window) {
     text_layer_destroy(s_time_layer);
     text_layer_destroy(s_unit_layer);
-    text_layer_destroy(s_next_layer);
     text_layer_destroy(s_stop_layer);
     text_layer_destroy(s_dest_layer);
     layer_destroy(s_vehicle_background_layer);
