@@ -107,6 +107,14 @@ static void anim_during_scroll_dec(Animation *animation, bool finished, void *co
     redraw_all();
 }
 
+static void anim_after_scroll(Animation *animation, bool finished, void *context) {
+    redraw_all();
+}
+
+static void set_door_open() {
+    s_vehicle_frame_index = (int)gdraw_command_sequence_get_num_frames(s_vehicle_sequence);
+}
+
 static void open_door_frame_handler(void* context) {
     if (s_vehicle_frame_index < (int)gdraw_command_sequence_get_num_frames(s_vehicle_sequence) - 1) {
         s_vehicle_frame_index += 1;
@@ -133,6 +141,7 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
     animation_set_handlers(out_anim, (AnimationHandlers) {
         .stopped = (direction == ScrollDirectionDown) ? anim_during_scroll_inc : anim_during_scroll_dec,
     }, NULL);
+    set_door_open();
     app_timer_register(0, close_door_frame_handler, NULL);
     Animation* in_anim = create_text_inbound_anim(opposite_direction);
     animation_set_handlers(in_anim, (AnimationHandlers) {
@@ -158,6 +167,9 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
         number_anim,
         NULL);
     animation_set_delay(sequence, 140);
+    animation_set_handlers(sequence, (AnimationHandlers) {
+        .stopped = anim_after_scroll,
+    }, NULL);
     return sequence;
 }
 
