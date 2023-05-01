@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include "anim_colour.h"
 #include "data.h"
 
 #define RIGHT_BAR_WIDTH 50
@@ -27,6 +28,9 @@ static WindowDataArray sample_data_arr = {
     .array = NULL,
     .data_len = 3,
     .data_index = 0,
+    .anim_intermediates = {
+        .color = NULL,
+    }
 };
 
 static void set_time_text(WindowData* data) {
@@ -163,9 +167,15 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
     Animation* vehicle_in_anim = create_vehicle_inbound_anim(opposite_direction);
     Animation* vehicle_sequence = animation_sequence_create(vehicle_out_anim, vehicle_in_anim, NULL);
     animation_set_delay(vehicle_sequence, 200);
+    GColor* next_color = (direction == ScrollDirectionDown)
+        ? &(window_data_next(&sample_data_arr)->color)
+        : &(window_data_prev(&sample_data_arr)->color);
+    Animation* colour_anim = create_anim_bg_colour(s_window, next_color);
     Animation* sequence = animation_spawn_create(
         animation_sequence_create(out_anim, in_anim, NULL),
-        vehicle_sequence, NULL);
+        vehicle_sequence,
+        colour_anim,
+        NULL);
     animation_set_delay(sequence, 200);
     return sequence;
 }
@@ -210,10 +220,10 @@ static void vehicle_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
-    WindowData* data = window_data_current(window_get_user_data(s_window));
+    WindowDataArray* data_array = window_get_user_data(s_window);
 
     GRect bounds = layer_get_bounds(layer);
-    graphics_context_set_fill_color(ctx, data->color);
+    graphics_context_set_fill_color(ctx, *get_display_gcolor(data_array));
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
     // overhead wire!
