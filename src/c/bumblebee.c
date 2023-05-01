@@ -19,6 +19,8 @@ static Layer *s_route_layer;
 static Layer *s_vehicle_background_layer;
 static Layer *s_vehicle_layer;
 static Layer *s_description_layer;
+static GDrawCommandSequence* s_streetcar_sequence;
+static GDrawCommandSequence* s_subway_sequence;
 static GDrawCommandSequence* s_vehicle_sequence;
 static int s_vehicle_frame_index = 9;
 
@@ -204,6 +206,16 @@ static void click_config_provider(void *context) {
 }
 
 static void vehicle_update_proc(Layer *layer, GContext *ctx) {
+    WindowData* data = window_data_current(window_get_user_data(s_window));
+    switch (data->vehicle_type) {
+    case STREETCAR:
+        s_vehicle_sequence = s_streetcar_sequence;
+        break;
+    case SUBWAY:
+        s_vehicle_sequence = s_subway_sequence;
+        break;
+    }
+
     GRect bounds = layer_get_bounds(layer);
     GPoint vehicle_origin = GPoint(bounds.origin.x, bounds.origin.y + 40);
     GDrawCommandFrame* frame = gdraw_command_sequence_get_frame_by_index(s_vehicle_sequence, s_vehicle_frame_index);
@@ -214,19 +226,22 @@ static void vehicle_update_proc(Layer *layer, GContext *ctx) {
 
 static void vehicle_background_update_proc(Layer *layer, GContext *ctx) {
     WindowDataArray* data_array = window_get_user_data(s_window);
+    WindowData* data = window_data_current(data_array);
 
     GRect bounds = layer_get_bounds(layer);
     graphics_context_set_fill_color(ctx, *get_display_gcolor(data_array));
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
     // overhead wire!
-    graphics_context_set_stroke_color(ctx, GColorBlack);
-    graphics_context_set_stroke_width(ctx, 1);
-    graphics_draw_line(ctx, GPoint(
-        bounds.origin.x + 32, 0
-    ), GPoint(
-        bounds.origin.x + 32, bounds.size.h
-    ));
+    if (data->vehicle_type == STREETCAR) {
+        graphics_context_set_stroke_color(ctx, GColorBlack);
+        graphics_context_set_stroke_width(ctx, 1);
+        graphics_draw_line(ctx, GPoint(
+            bounds.origin.x + 32, 0
+        ), GPoint(
+            bounds.origin.x + 32, bounds.size.h
+        ));
+    }
 }
 
 static void route_layer_update_proc(Layer *layer, GContext *ctx) {
@@ -417,7 +432,8 @@ static void init(void) {
         .shape = CIRCLE,
     };
 
-    s_vehicle_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
+    s_streetcar_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
+    s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
 
     s_window = window_create();
     window_set_click_config_provider(s_window, click_config_provider);
