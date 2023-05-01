@@ -14,7 +14,7 @@ Animation *create_vehicle_outbound_anim(ScrollDirection direction, Layer* vehicl
 
         // reset to `from` point
         GPoint origin;
-        property_animation_get_from_gpoint((PropertyAnimation*)in_anim, &origin);
+        property_animation_get_from_gpoint((PropertyAnimation*)out_anim, &origin);
         GRect bounds = layer_get_bounds(vehicle_layer);
         layer_set_bounds(vehicle_layer, GRect(origin.x, origin.y, bounds.size.w, bounds.size.h));
     }
