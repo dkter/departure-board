@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "anim_colour.h"
+#include "anim_vehicle.h"
 #include "data.h"
 
 #define RIGHT_BAR_WIDTH 50
@@ -78,13 +79,6 @@ static const uint32_t BACKGROUND_SCROLL_DURATION = 100 * 2;
 static const uint32_t SCROLL_DURATION = 130 * 2;
 static const int16_t SCROLL_DIST_OUT = 40;
 static const int16_t SCROLL_DIST_IN = 16;
-static const uint32_t VEHICLE_SCROLL_DURATION = 240;
-static const int16_t VEHICLE_SCROLL_DIST = 60;
-
-typedef enum {
-    ScrollDirectionDown,
-    ScrollDirectionUp,
-} ScrollDirection;
 
 static Animation *create_text_outbound_anim(ScrollDirection direction) {
     const int16_t to_dy = (direction == ScrollDirectionDown) ? -SCROLL_DIST_OUT : SCROLL_DIST_OUT;
@@ -98,28 +92,6 @@ static Animation *create_text_inbound_anim(ScrollDirection direction) {
 
     Animation *in_text = create_anim_scroll_in(s_description_layer, SCROLL_DURATION, from_dy);
     return in_text;
-}
-
-static Animation *create_vehicle_outbound_anim(ScrollDirection direction) {
-    const int16_t to_dy = (direction == ScrollDirectionDown) ? -VEHICLE_SCROLL_DIST : VEHICLE_SCROLL_DIST;
-
-    GPoint to_origin = GPoint(0, to_dy);
-    Animation *anim = (Animation *) property_animation_create_bounds_origin(s_vehicle_layer, NULL, &to_origin);
-    animation_set_duration(anim, VEHICLE_SCROLL_DURATION);
-    animation_set_curve(anim, AnimationCurveLinear);
-
-    return anim;
-}
-
-static Animation *create_vehicle_inbound_anim(ScrollDirection direction) {
-    const int16_t from_dy = (direction == ScrollDirectionDown) ? -VEHICLE_SCROLL_DIST : VEHICLE_SCROLL_DIST;
-
-    GPoint from_origin = GPoint(0, from_dy);
-    Animation *anim = (Animation *) property_animation_create_bounds_origin(s_vehicle_layer, &from_origin, NULL);
-    animation_set_duration(anim, VEHICLE_SCROLL_DURATION);
-    animation_set_curve(anim, AnimationCurveEaseOut);
-
-    return anim;
 }
 
 static void anim_during_scroll_inc(Animation *animation, bool finished, void *context) {
@@ -163,8 +135,8 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
     animation_set_handlers(in_anim, (AnimationHandlers) {
         .stopped = _open_door_frame_handler,
     }, NULL);
-    Animation* vehicle_out_anim = create_vehicle_outbound_anim(direction);
-    Animation* vehicle_in_anim = create_vehicle_inbound_anim(opposite_direction);
+    Animation* vehicle_out_anim = create_vehicle_outbound_anim(direction, s_vehicle_layer);
+    Animation* vehicle_in_anim = create_vehicle_inbound_anim(opposite_direction, s_vehicle_layer);
     Animation* vehicle_sequence = animation_sequence_create(vehicle_out_anim, vehicle_in_anim, NULL);
     animation_set_delay(vehicle_sequence, 200);
     GColor* next_color = (direction == ScrollDirectionDown)

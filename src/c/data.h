@@ -3,6 +3,11 @@
 #include <pebble.h>
 
 typedef enum {
+    ScrollDirectionDown,
+    ScrollDirectionUp,
+} ScrollDirection;
+
+typedef enum {
     STREETCAR,
     SUBWAY,
 } VehicleType;
