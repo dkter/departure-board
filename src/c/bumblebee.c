@@ -150,14 +150,14 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
         ? &(window_data_next(&sample_data_arr)->time)
         : &(window_data_prev(&sample_data_arr)->time);
     Animation* number_anim = create_anim_number(s_window, next_time);
-    animation_set_delay(number_anim, 200);
+    animation_set_delay(number_anim, 100);
     Animation* sequence = animation_spawn_create(
         animation_sequence_create(out_anim, in_anim, NULL),
         vehicle_sequence,
         colour_anim,
         number_anim,
         NULL);
-    animation_set_delay(sequence, 200);
+    animation_set_delay(sequence, 140);
     return sequence;
 }
 
