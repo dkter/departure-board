@@ -61,3 +61,12 @@ GColor* get_display_gcolor(WindowDataArray* array) {
         return &(data->color);
     }
 }
+
+int16_t* get_display_time(WindowDataArray* array) {
+    if (array->anim_intermediates.time != NULL) {
+        return array->anim_intermediates.time;
+    } else {
+        WindowData* data = window_data_current(array);
+        return &(data->time);
+    }
+}

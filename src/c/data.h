@@ -19,7 +19,7 @@ typedef enum {
 } RouteShape;
 
 typedef struct {
-    int time;
+    int16_t time;
     char* unit;
     char* stop_name;
     char* dest_name;
@@ -32,6 +32,7 @@ typedef struct {
 
 typedef struct {
     GColor* color;
+    int16_t* time;
 } AnimIntermediates;
 
 typedef struct {
@@ -48,4 +49,5 @@ int window_data_inc(WindowDataArray*);
 int window_data_dec(WindowDataArray*);
 int window_data_can_inc(WindowDataArray*);
 int window_data_can_dec(WindowDataArray*);
-GColor* get_display_gcolor(WindowDataArray* array);
+GColor* get_display_gcolor(WindowDataArray*);
+int16_t* get_display_time(WindowDataArray*);

@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "anim_colour.h"
+#include "anim_number.h"
 #include "anim_vehicle.h"
 #include "data.h"
 
@@ -31,11 +32,12 @@ static WindowDataArray sample_data_arr = {
     .data_index = 0,
     .anim_intermediates = {
         .color = NULL,
+        .time = NULL,
     }
 };
 
-static void set_time_text(WindowData* data) {
-    snprintf(time_text, sizeof(time_text), "%d", data->time);
+void set_time_text(WindowDataArray* data_arr) {
+    snprintf(time_text, sizeof(time_text), "%hd", *get_display_time(data_arr));
     text_layer_set_text(s_time_layer, time_text);
 }
 
@@ -50,8 +52,9 @@ static void set_dest_text(WindowData* data) {
 }
 
 static void redraw_all() {
-    WindowData* data = window_data_current(window_get_user_data(s_window));
-    set_time_text(data);
+    WindowDataArray* data_arr = window_get_user_data(s_window);
+    WindowData* data = window_data_current(data_arr);
+    set_time_text(data_arr);
     text_layer_set_text(s_unit_layer, data->unit);
     set_stop_text(data);
     set_dest_text(data);
@@ -143,10 +146,16 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
         ? &(window_data_next(&sample_data_arr)->color)
         : &(window_data_prev(&sample_data_arr)->color);
     Animation* colour_anim = create_anim_bg_colour(s_window, next_color);
+    int16_t* next_time = (direction == ScrollDirectionDown)
+        ? &(window_data_next(&sample_data_arr)->time)
+        : &(window_data_prev(&sample_data_arr)->time);
+    Animation* number_anim = create_anim_number(s_window, next_time);
+    animation_set_delay(number_anim, 200);
     Animation* sequence = animation_spawn_create(
         animation_sequence_create(out_anim, in_anim, NULL),
         vehicle_sequence,
         colour_anim,
+        number_anim,
         NULL);
     animation_set_delay(sequence, 200);
     return sequence;
@@ -253,9 +262,9 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
 static void description_layer_update_proc(Layer *layer, GContext *ctx) {
 }
 
-static void create_time_layer(GRect bounds, WindowData* data) {
+static void create_time_layer(GRect bounds, WindowDataArray* data_arr) {
     s_time_layer = text_layer_create(GRect(0, 0, bounds.size.w - RIGHT_BAR_WIDTH - 2, 64));
-    set_time_text(data);
+    set_time_text(data_arr);
     text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS));
     text_layer_set_text_alignment(s_time_layer, GTextAlignmentRight);
 }
@@ -320,9 +329,10 @@ static void create_description(GRect bounds, WindowData* data) {
 static void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
-    WindowData* data = window_data_current(window_get_user_data(window));
+    WindowDataArray* data_arr = window_get_user_data(window);
+    WindowData* data = window_data_current(data_arr);
 
-    create_time_layer(bounds, data);
+    create_time_layer(bounds, data_arr);
     layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 
     create_unit_layer(bounds, data);
@@ -382,7 +392,7 @@ static void init(void) {
         .vehicle_type = STREETCAR,
         .color = GColorRed,
         .shape = ROUNDRECT,
-        },
+    };
     sample_data_arr.array[2] = (WindowData) {
         .time = 1,
         .unit = "min",
