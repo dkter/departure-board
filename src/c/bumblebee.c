@@ -21,6 +21,7 @@ static Layer *s_description_layer;
 static GDrawCommandSequence* s_streetcar_sequence;
 static GDrawCommandSequence* s_subway_sequence;
 static GDrawCommandSequence* s_bus_sequence;
+static GDrawCommandSequence* s_regional_train_sequence;
 static GDrawCommandSequence* s_vehicle_sequence;
 static int s_vehicle_frame_index = 9;
 
@@ -30,7 +31,7 @@ static char dest_text[32];
 
 static WindowDataArray sample_data_arr = {
     .array = NULL,
-    .data_len = 4,
+    .data_len = 5,
     .data_index = 0,
     .anim_intermediates = {
         .color = NULL,
@@ -217,6 +218,9 @@ static void vehicle_update_proc(Layer *layer, GContext *ctx) {
     case BUS:
         s_vehicle_sequence = s_bus_sequence;
         break;
+    case REGIONAL_TRAIN:
+        s_vehicle_sequence = s_regional_train_sequence;
+        break;
     }
 
     GRect bounds = layer_get_bounds(layer);
@@ -387,6 +391,7 @@ static void window_unload(Window *window) {
     gdraw_command_sequence_destroy(s_streetcar_sequence);
     gdraw_command_sequence_destroy(s_subway_sequence);
     gdraw_command_sequence_destroy(s_bus_sequence);
+    gdraw_command_sequence_destroy(s_regional_train_sequence);
     layer_destroy(s_route_layer);
 }
 
@@ -436,10 +441,22 @@ static void init(void) {
         .color = GColorRed,
         .shape = ROUNDRECT,
     };
+    sample_data_arr.array[4] = (WindowData) {
+        .time = 45,
+        .unit = "min",
+        .stop_name = "Bloor GO",
+        .dest_name = "Guelph Central GO",
+        .route_number = "KI",
+        .route_name = "Kitchener",
+        .vehicle_type = REGIONAL_TRAIN,
+        .color = GColorDarkGreen,
+        .shape = RECT,
+    };
 
     s_streetcar_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
     s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
     s_bus_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_BUS_ANIM);
+    s_regional_train_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_TRAIN_ANIM);
 
     s_window = window_create();
     window_set_click_config_provider(s_window, click_config_provider);

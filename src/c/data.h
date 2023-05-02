@@ -11,6 +11,7 @@ typedef enum {
     STREETCAR,
     SUBWAY,
     BUS,
+    REGIONAL_TRAIN,
 } VehicleType;
 
 typedef enum {

@@ -38,6 +38,11 @@
           "type": "raw",
           "name": "BUS_ANIM",
           "file": "bus_frames.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "TRAIN_ANIM",
+          "file": "train_frames.pdc"
         }
       ]
     }
