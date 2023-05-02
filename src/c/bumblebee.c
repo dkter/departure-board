@@ -388,6 +388,7 @@ static void window_unload(Window *window) {
     text_layer_destroy(s_dest_layer);
     layer_destroy(s_vehicle_background_layer);
     layer_destroy(s_vehicle_layer);
+    layer_destroy(s_description_layer);
     gdraw_command_sequence_destroy(s_streetcar_sequence);
     gdraw_command_sequence_destroy(s_subway_sequence);
     gdraw_command_sequence_destroy(s_bus_sequence);
