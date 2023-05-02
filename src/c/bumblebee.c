@@ -20,6 +20,7 @@ static Layer *s_vehicle_layer;
 static Layer *s_description_layer;
 static GDrawCommandSequence* s_streetcar_sequence;
 static GDrawCommandSequence* s_subway_sequence;
+static GDrawCommandSequence* s_bus_sequence;
 static GDrawCommandSequence* s_vehicle_sequence;
 static int s_vehicle_frame_index = 9;
 
@@ -29,7 +30,7 @@ static char dest_text[32];
 
 static WindowDataArray sample_data_arr = {
     .array = NULL,
-    .data_len = 3,
+    .data_len = 4,
     .data_index = 0,
     .anim_intermediates = {
         .color = NULL,
@@ -213,6 +214,9 @@ static void vehicle_update_proc(Layer *layer, GContext *ctx) {
     case SUBWAY:
         s_vehicle_sequence = s_subway_sequence;
         break;
+    case BUS:
+        s_vehicle_sequence = s_bus_sequence;
+        break;
     }
 
     GRect bounds = layer_get_bounds(layer);
@@ -380,7 +384,9 @@ static void window_unload(Window *window) {
     text_layer_destroy(s_dest_layer);
     layer_destroy(s_vehicle_background_layer);
     layer_destroy(s_vehicle_layer);
-    gdraw_command_sequence_destroy(s_vehicle_sequence);
+    gdraw_command_sequence_destroy(s_streetcar_sequence);
+    gdraw_command_sequence_destroy(s_subway_sequence);
+    gdraw_command_sequence_destroy(s_bus_sequence);
     layer_destroy(s_route_layer);
 }
 
@@ -419,9 +425,21 @@ static void init(void) {
         .color = GColorGreen,
         .shape = CIRCLE,
     };
+    sample_data_arr.array[3] = (WindowData) {
+        .time = 22,
+        .unit = "min",
+        .stop_name = "Dundas West Station",
+        .dest_name = "Kipling Station",
+        .route_number = "40A",
+        .route_name = "Junction-Dundas West",
+        .vehicle_type = BUS,
+        .color = GColorRed,
+        .shape = ROUNDRECT,
+    };
 
     s_streetcar_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
     s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
+    s_bus_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_BUS_ANIM);
 
     s_window = window_create();
     window_set_click_config_provider(s_window, click_config_provider);

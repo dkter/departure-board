@@ -10,6 +10,7 @@ typedef enum {
 typedef enum {
     STREETCAR,
     SUBWAY,
+    BUS,
 } VehicleType;
 
 typedef enum {

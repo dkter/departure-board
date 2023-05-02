@@ -33,6 +33,11 @@
           "type": "raw",
           "name": "SUBWAY_ANIM",
           "file": "srt_frames.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "BUS_ANIM",
+          "file": "bus_frames.pdc"
         }
       ]
     }
