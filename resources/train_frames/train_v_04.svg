@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100"
+   height="100"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg2091"
+   sodipodi:docname="train_v_04.svg"
+   inkscape:version="1.1.2 (b8e25be833, 2022-02-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview2093"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="px"
+     showgrid="true"
+     units="px"
+     borderlayer="true"
+     inkscape:snap-nodes="true"
+     inkscape:object-nodes="true"
+     inkscape:zoom="57.520003"
+     inkscape:cx="11.778511"
+     inkscape:cy="73.35709"
+     inkscape:window-width="2256"
+     inkscape:window-height="1425"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid2152" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2088" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 1,83 v 1 l 1,1 H 3 L 4,84 V 83 L 3,82 H 2 Z"
+       id="path8805" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 1,16 v 1 l 1,1 H 3 L 4,17 V 16 L 3,15 H 2 Z"
+       id="path8807" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 17,1 H 5 L 2,21 V 79 L 5,99 H 17 L 20,79 V 21 Z"
+       id="path2620"
+       sodipodi:nodetypes="ccccccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 11,66 v 8 H 2 v -8 z"
+       id="path2864"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 11,71.5 H 2"
+       id="path2866"
+       sodipodi:nodetypes="cc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 11,23 v 8 H 2 v -8 z"
+       id="path2868"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 11,28.5 H 2"
+       id="path2870"
+       sodipodi:nodetypes="cc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 11,9 h -1 v 4 h 1 z"
+       id="path2872"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 11,17 h -1 v 2 h 1 z"
+       id="path2874"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 11,82 h -1 v 2 h 1 z"
+       id="path2966"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 11,88 h -1 v 4 h 1 z"
+       id="path2968"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,21 h -1 v 3 h 1 z"
+       id="path3098"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,28 h -1 v 3 h 1 z"
+       id="path3100"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,35 h -1 v 3 h 1 z"
+       id="path3102"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,42 h -1 v 3 h 1 z"
+       id="path3104"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,49 h -1 v 3 h 1 z"
+       id="path3106"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,56 h -1 v 3 h 1 z"
+       id="path3108"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,63 h -1 v 3 h 1 z"
+       id="path3110"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,70 h -1 v 3 h 1 z"
+       id="path3112"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="m 16,77 h -1 v 3 h 1 z"
+       id="path3114"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 8,35 H 7 v 3 h 1 z"
+       id="path3476"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 8,42 H 7 v 3 h 1 z"
+       id="path3478"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 8,49 H 7 v 3 h 1 z"
+       id="path3480"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 8,56 H 7 v 3 h 1 z"
+       id="path3482"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 3,92 H 2 l -1,1 v 1 l 1,1 h 1 l 1,-1 v -1 z"
+       id="path8803" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 1,6 V 7 L 2,8 H 3 L 4,7 V 6 L 3,5 H 2 Z"
+       id="path8809" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 11,25.5 H 2"
+       id="path1550"
+       sodipodi:nodetypes="cc" />
+    <path
+       fill="#ffffff"
+       stroke="#000000"
+       stroke-width="2"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="10"
+       d="M 11,68.5 H 2"
+       id="path1552"
+       sodipodi:nodetypes="cc" />
+  </g>
+</svg>
