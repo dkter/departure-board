@@ -74,6 +74,7 @@ exports.corrections = {
         }
     },
     "GO Transit": function(json_stop, json_departure, watch_data) {
+        watch_data[keys.dest_name] = watch_data[keys.dest_name].replace(watch_data[keys.route_number] + " - ", "")
         watch_data[keys.shape] = RouteShape.RECT;
     }
 }
