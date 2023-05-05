@@ -9,6 +9,8 @@ exports.corrections = {
         watch_data[keys.stop_name] = watch_data[keys.stop_name].replaceAll(/ (St|Av|Ave|Dr|Rd)( East| West)? at /g, " / ")
             .replaceAll(/ (St|Av|Ave|Dr|Rd)( East| West)?$/g, "");
 
+        watch_data[keys.route_name] = watch_data[keys.route_name].replace(/LINE \d \((.+)\)/, "$1");
+
         let route_number = json_departure.trip.route.route_short_name;
         if (route_number == 1) {
             // watch_data[keys.vehicle_type] = VehicleType.SUBWAY;
