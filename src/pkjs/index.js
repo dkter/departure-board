@@ -46,7 +46,7 @@ function dep_to_watch_data(stop, departure) {
     watch_data[keys.vehicle_type] = {
         0: VehicleType.STREETCAR,
         1: VehicleType.SUBWAY,
-        2: VehicleType.TRAIN,
+        2: VehicleType.REGIONAL_TRAIN,
         3: VehicleType.BUS,
         5: VehicleType.STREETCAR, // cable car
         6: VehicleType.STREETCAR, // gondola
