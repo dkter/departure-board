@@ -11,9 +11,9 @@ function rgb_to_pebble_colour(hexstr) {
     let g = parseInt(hexstr.substr(2, 2), 16);
     let b = parseInt(hexstr.substr(4, 2), 16);
 
-    r = ((r + 42) / 85) * 85;  // nearest for 2bit color range
-    g = ((g + 42) / 85) * 85;  // nearest for 2bit color range
-    b = ((b + 42) / 85) * 85;  // nearest for 2bit color range
+    r = (r / 85) * 85;
+    g = (g / 85) * 85;
+    b = (b / 85) * 85;
 
     r >>= 6;
     g >>= 6;
