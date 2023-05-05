@@ -8,16 +8,16 @@ typedef enum {
 } ScrollDirection;
 
 typedef enum {
-    STREETCAR,
-    SUBWAY,
-    BUS,
-    REGIONAL_TRAIN,
+    STREETCAR = 0,
+    SUBWAY = 1,
+    BUS = 2,
+    REGIONAL_TRAIN = 3,
 } VehicleType;
 
 typedef enum {
-    ROUNDRECT,
-    RECT,
-    CIRCLE,
+    ROUNDRECT = 0,
+    RECT = 1,
+    CIRCLE = 2,
 } RouteShape;
 
 typedef struct {

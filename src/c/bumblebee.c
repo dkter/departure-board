@@ -396,6 +396,10 @@ static void window_unload(Window *window) {
     layer_destroy(s_route_layer);
 }
 
+static void inbox_received_callback(DictionaryIterator *iter, void *context) {
+
+}
+
 static void init(void) {
     sample_data_arr.array = malloc(sample_data_arr.data_len*sizeof(WindowData));
     sample_data_arr.array[0] = (WindowData) {
@@ -458,6 +462,11 @@ static void init(void) {
     s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
     s_bus_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_BUS_ANIM);
     s_regional_train_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_TRAIN_ANIM);
+
+    app_message_register_inbox_received(inbox_received_callback);
+    const int inbox_size = 1024;
+    const int outbox_size = 32;
+    app_message_open(inbox_size, outbox_size);
 
     s_window = window_create();
     window_set_click_config_provider(s_window, click_config_provider);

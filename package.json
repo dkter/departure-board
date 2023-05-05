@@ -5,6 +5,7 @@
   "keywords": ["pebble-app"],
   "private": true,
   "dependencies": {},
+  "capabilities": [ "location" ],
   "pebble": {
     "displayName": "bumblebee",
     "uuid": "a18a191e-51e0-48a3-9c63-075eea857333",
@@ -20,7 +21,16 @@
       "watchface": false
     },
     "messageKeys": [
-      "dummy"
+      "num_routes",
+      "time[6]",
+      "unit[6]",
+      "stop_name[6]",
+      "dest_name[6]",
+      "route_number[6]",
+      "route_name[6]",
+      "vehicle_type[6]",
+      "color[6]",
+      "shape[6]"
     ],
     "resources": {
       "media": [
