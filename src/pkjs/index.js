@@ -117,20 +117,21 @@ function get_routes() {
                 console.log('Error parsing JSON from stops request');
                 return;
             }
-            let departures = [];
+            let departures = new Array(json.stops.length);
             for (const [index, stop] of json.stops.entries()) {
                 let departures_request = new XMLHttpRequest();
                 departures_request.onload = function() {
-                    let json = "";
+                    let departures_json = "";
                     try {
-                        json = JSON.parse(this.responseText);
+                        departures_json = JSON.parse(this.responseText);
                     }
                     catch (err) {
                         console.log('Error parsing JSON from departures request');
                         return;
                     }
-                    departures[index] = [stop, json.stops[0].departures];
-                    if (departures.filter(Boolean).length == json.stops.length + 1) {  // not sure why + 1
+                    departures[index] = [stop, departures_json.stops[0].departures];
+                    if (departures.filter(e => e != undefined || e != null).length == json.stops.length) {
+                        console.log(JSON.stringify(departures));
                         send_to_watch(departures);
                     }
                 };
