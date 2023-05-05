@@ -5,6 +5,10 @@ exports.corrections = {
     "TTC": function(json_stop, json_departure, watch_data) {
         watch_data[keys.dest_name] = json_departure.trip.trip_headsign.split(" towards ")[1];
 
+        // make the stop name a little shorter
+        watch_data[keys.stop_name] = watch_data[keys.stop_name].replaceAll(/ (St|Av|Ave|Dr|Rd) (East|West) at /g, " / ")
+            .replaceAll(/ (St|Av|Ave|Dr|Rd)$/g, "");
+
         let route_number = json_departure.trip.route.route_short_name;
         if (route_number == 1) {
             // watch_data[keys.vehicle_type] = VehicleType.SUBWAY;
