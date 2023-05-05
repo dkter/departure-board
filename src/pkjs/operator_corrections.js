@@ -1,4 +1,5 @@
 const { VehicleType, RouteShape, GColor } = require("./data");
+const { titleCaps } = require("./title_caps");
 const keys = require('message_keys');
 
 exports.corrections = {
@@ -10,6 +11,10 @@ exports.corrections = {
             .replaceAll(/ (St|Av|Ave|Dr|Rd)( East| West)?$/g, "");
 
         watch_data[keys.route_name] = watch_data[keys.route_name].replace(/LINE \d \((.+)\)/, "$1");
+
+        // TTC data has these in all caps which is annoying
+        watch_data[keys.route_name] = titleCaps(watch_data[keys.route_name].toLowerCase());
+        watch_data[keys.dest_name] = titleCaps(watch_data[keys.dest_name].toLowerCase());
 
         let route_number = json_departure.trip.route.route_short_name;
         if (route_number == 1) {
