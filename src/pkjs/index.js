@@ -6,14 +6,11 @@ const { VehicleType, RouteShape, GColor } = require("./data");
 const MAX_WATCH_DATA = 6;
 
 function get_mins_to_hhmmss(datestr, timestr) {
-    // javascript apparently has really bad datetime utils
-    // so I'm just going to mess with this ISO 8601 string
     const now_date = new Date(Date.now());
     // apparently javascript cannot output or parse strings in anything
     // but UTC. timestr is going to be in the local timezone. so
     // adjust now_date so it outputs as local time when converted to UTC?
     now_date.setMinutes(now_date.getMinutes() - now_date.getTimezoneOffset());
-    const now_iso = now_date.toISOString();
     const future_iso_str = datestr + "T" + timestr + ".000Z";
     const future_timestamp = Date.parse(future_iso_str);
     const minutes = Math.round((future_timestamp - now_date) / 60000);
