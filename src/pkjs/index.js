@@ -5,6 +5,23 @@ const { VehicleType, RouteShape, GColor } = require("./data");
 
 const MAX_WATCH_DATA = 6;
 
+function rgb_to_pebble_colour(hexstr) {
+    // adapted from https://github.com/pebble-examples/cards-example/blob/master/tools/pebble_image_routines.py
+    let r = parseInt(hexstr.substr(0, 2), 16);
+    let g = parseInt(hexstr.substr(2, 2), 16);
+    let b = parseInt(hexstr.substr(4, 2), 16);
+
+    r = ((r + 42) / 85) * 85;  // nearest for 2bit color range
+    g = ((g + 42) / 85) * 85;  // nearest for 2bit color range
+    b = ((b + 42) / 85) * 85;  // nearest for 2bit color range
+
+    r >>= 6;
+    g >>= 6;
+    b >>= 6;
+    argb8 = (0x3 << 6) | (r << 4) | (g << 2) | b;
+    return argb8;
+}
+
 function get_mins_to_hhmmss(datestr, timestr) {
     const now_date = new Date(Date.now());
     // apparently javascript cannot output or parse strings in anything
@@ -37,7 +54,7 @@ function dep_to_watch_data(stop, departure) {
         11: VehicleType.BUS, // trolleybus
         12: VehicleType.SUBWAY, // monorail
     }[departure.trip.route.route_type];
-    watch_data[keys.color] = GColor.BLUE;
+    watch_data[keys.color] = rgb_to_pebble_colour(departure.trip.route.route_color);
     watch_data[keys.shape] = RouteShape.ROUNDRECT;
 
     if (corrections.hasOwnProperty(departure.trip.route.agency.agency_name)) {
