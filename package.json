@@ -1,21 +1,18 @@
 {
-  "name": "bumblebee",
-  "author": "MakeAwesomeHappen",
+  "name": "Departure Board",
+  "author": "David Teresi",
   "version": "1.0.0",
   "keywords": ["pebble-app"],
   "private": true,
   "dependencies": {},
   "capabilities": [ "location" ],
   "pebble": {
-    "displayName": "bumblebee",
+    "displayName": "Departure Board",
     "uuid": "a18a191e-51e0-48a3-9c63-075eea857333",
     "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": [
-      "aplite",
-      "basalt",
-      "chalk",
-      "diorite"
+      "chalk"
     ],
     "watchapp": {
       "watchface": false
