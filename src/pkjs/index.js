@@ -78,6 +78,8 @@ function get_routes() {
             }
         }
 
+        combined_watch_data[keys.num_routes] = index;
+
         Pebble.sendAppMessage(combined_watch_data, function() {
             console.log('Message sent successfully: ' + JSON.stringify(combined_watch_data));
         }, function(e) {

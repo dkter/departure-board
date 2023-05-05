@@ -8,6 +8,7 @@
 #define RIGHT_MARGIN 5
 #define SPACE 5
 #define DELTA 13
+#define MAX_ROUTES 6
 
 static Window *s_window;
 static TextLayer *s_time_layer;
@@ -397,66 +398,50 @@ static void window_unload(Window *window) {
 }
 
 static void inbox_received_callback(DictionaryIterator *iter, void *context) {
+    Tuple* num_routes = dict_find(iter, MESSAGE_KEY_num_routes);
+    if (num_routes) {
+        sample_data_arr.data_len = num_routes->value->int16;
+        sample_data_arr.data_index = 0;
+        for (int i = 0; i < sample_data_arr.data_len; i += 1) {
+            Tuple* time = dict_find(iter, MESSAGE_KEY_time + i);
+            Tuple* unit = dict_find(iter, MESSAGE_KEY_unit + i);
+            Tuple* stop_name = dict_find(iter, MESSAGE_KEY_stop_name + i);
+            Tuple* dest_name = dict_find(iter, MESSAGE_KEY_dest_name + i);
+            Tuple* route_number = dict_find(iter, MESSAGE_KEY_route_number + i);
+            Tuple* route_name = dict_find(iter, MESSAGE_KEY_route_name + i);
+            Tuple* vehicle_type = dict_find(iter, MESSAGE_KEY_vehicle_type + i);
+            Tuple* color = dict_find(iter, MESSAGE_KEY_color + i);
+            Tuple* shape = dict_find(iter, MESSAGE_KEY_shape + i);
 
+            sample_data_arr.array[i].time = time->value->int16;
+            strncpy(sample_data_arr.array[i].unit, unit->value->cstring, 32);
+            strncpy(sample_data_arr.array[i].stop_name, stop_name->value->cstring, 32);
+            strncpy(sample_data_arr.array[i].dest_name, dest_name->value->cstring, 32);
+            strncpy(sample_data_arr.array[i].route_number, route_number->value->cstring, 32);
+            strncpy(sample_data_arr.array[i].route_name, route_name->value->cstring, 32);
+            sample_data_arr.array[i].vehicle_type = (VehicleType)vehicle_type->value->int16;
+            sample_data_arr.array[i].color = (GColor){.argb=color->value->int16};
+            sample_data_arr.array[i].shape = (RouteShape)shape->value->int16;
+        }
+        redraw_all();
+    }
 }
 
 static void init(void) {
-    sample_data_arr.array = malloc(sample_data_arr.data_len*sizeof(WindowData));
-    sample_data_arr.array[0] = (WindowData) {
-        .time = 10,
-        .unit = "min",
-        .stop_name = "Dundas West Station",
-        .dest_name = "Distillery",
-        .route_number = "504A",
-        .route_name = "King",
-        .vehicle_type = STREETCAR,
-        .color = GColorRed,
-        .shape = ROUNDRECT,
-    };
-    sample_data_arr.array[1] = (WindowData) {
-        .time = 6,
-        .unit = "min",
-        .stop_name = "Dundas West Station",
-        .dest_name = "Broadview Station",
-        .route_number = "505",
-        .route_name = "Dundas",
-        .vehicle_type = STREETCAR,
-        .color = GColorRed,
-        .shape = ROUNDRECT,
-    };
-    sample_data_arr.array[2] = (WindowData) {
-        .time = 1,
-        .unit = "min",
-        .stop_name = "Dundas West Station",
-        .dest_name = "Kipling",
-        .route_number = "2",
-        .route_name = "Bloor-Danforth",
-        .vehicle_type = SUBWAY,
-        .color = GColorGreen,
-        .shape = CIRCLE,
-    };
-    sample_data_arr.array[3] = (WindowData) {
-        .time = 22,
-        .unit = "min",
-        .stop_name = "Dundas West Station",
-        .dest_name = "Kipling Station",
-        .route_number = "40A",
-        .route_name = "Junction-Dundas West",
-        .vehicle_type = BUS,
-        .color = GColorRed,
-        .shape = ROUNDRECT,
-    };
-    sample_data_arr.array[4] = (WindowData) {
-        .time = 45,
-        .unit = "min",
-        .stop_name = "Bloor GO",
-        .dest_name = "Guelph Central GO",
-        .route_number = "KI",
-        .route_name = "Kitchener",
-        .vehicle_type = REGIONAL_TRAIN,
-        .color = GColorDarkGreen,
-        .shape = RECT,
-    };
+    sample_data_arr.array = malloc(MAX_ROUTES*sizeof(WindowData));
+    for (int i = 0; i < MAX_ROUTES; i += 1) {
+        sample_data_arr.array[i] = (WindowData) {
+            .time = 10,
+            .unit = malloc(32*sizeof(char)),
+            .stop_name = malloc(32*sizeof(char)),
+            .dest_name = malloc(32*sizeof(char)),
+            .route_number = malloc(32*sizeof(char)),
+            .route_name = malloc(32*sizeof(char)),
+            .vehicle_type = STREETCAR,
+            .color = GColorRed,
+            .shape = ROUNDRECT,
+        };
+    }
 
     s_streetcar_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
     s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
@@ -481,6 +466,13 @@ static void init(void) {
 
 static void deinit(void) {
     window_destroy(s_window);
+    for (int i = 0; i < MAX_ROUTES; i += 1) {
+        free(sample_data_arr.array[i].unit);
+        free(sample_data_arr.array[i].stop_name);
+        free(sample_data_arr.array[i].dest_name);
+        free(sample_data_arr.array[i].route_number);
+        free(sample_data_arr.array[i].route_name);
+    }
     free(sample_data_arr.array);
 }
 
