@@ -70,38 +70,51 @@ function dep_to_watch_data(stop, departure) {
     return watch_data;
 }
 
+function filter_departures(departures_by_stop) {
+    let done_ids = new Set();
+    let priority = [];
+    let last = [];
+
+    for (const [stop, deps] of departures_by_stop) {
+        let done_ids_this_stop = new Set();
+        for (const dep of deps) {
+            if (done_ids_this_stop.has(dep.trip.route.id)) {
+                continue;
+            } else if (!done_ids.has(dep.trip.route.id)) {
+                priority.push([stop, dep]);
+                done_ids.add(dep.trip.route.id);
+                done_ids_this_stop.add(dep.trip.route.id);
+            } else {
+                last.push([stop, dep]);
+                done_ids_this_stop.add(dep.trip.route.id);
+            }
+        }
+    }
+
+    let total_list = priority.concat(last);
+    return total_list;
+}
+
 function get_routes() {
-    const send_to_watch = function(departures) {
-        let index = 0;
+    const send_to_watch = function(departures_by_stop) {
         let combined_watch_data = {};
-        for (const [stop, deps] of departures) {
+        let filtered_deps = filter_departures(departures_by_stop);
+        for (const [index, [stop, dep]] of filtered_deps.entries()) {
             if (index == MAX_WATCH_DATA) {
                 break;
             }
-            // we only want one departure per route
-            deps.reverse();
-            const route_ids = deps.map(dep => dep.trip.route.id);
-            const filtered_deps = deps.filter((dep, index) => !route_ids.includes(dep.trip.route.id, index + 1)).toReversed();
-
-            for (const dep of filtered_deps) {
-                if (index == MAX_WATCH_DATA) {
-                    break;
-                }
-                const watch_data = dep_to_watch_data(stop, dep);
-                combined_watch_data[keys.time + index] = watch_data[keys.time];
-                combined_watch_data[keys.unit + index] = watch_data[keys.unit];
-                combined_watch_data[keys.stop_name + index] = watch_data[keys.stop_name];
-                combined_watch_data[keys.dest_name + index] = watch_data[keys.dest_name];
-                combined_watch_data[keys.route_number + index] = watch_data[keys.route_number];
-                combined_watch_data[keys.route_name + index] = watch_data[keys.route_name];
-                combined_watch_data[keys.vehicle_type + index] = watch_data[keys.vehicle_type];
-                combined_watch_data[keys.color + index] = watch_data[keys.color];
-                combined_watch_data[keys.shape + index] = watch_data[keys.shape];
-                index += 1;
-            }
+            const watch_data = dep_to_watch_data(stop, dep);
+            combined_watch_data[keys.time + index] = watch_data[keys.time];
+            combined_watch_data[keys.unit + index] = watch_data[keys.unit];
+            combined_watch_data[keys.stop_name + index] = watch_data[keys.stop_name];
+            combined_watch_data[keys.dest_name + index] = watch_data[keys.dest_name];
+            combined_watch_data[keys.route_number + index] = watch_data[keys.route_number];
+            combined_watch_data[keys.route_name + index] = watch_data[keys.route_name];
+            combined_watch_data[keys.vehicle_type + index] = watch_data[keys.vehicle_type];
+            combined_watch_data[keys.color + index] = watch_data[keys.color];
+            combined_watch_data[keys.shape + index] = watch_data[keys.shape];
+            combined_watch_data[keys.num_routes] = index + 1;
         }
-
-        combined_watch_data[keys.num_routes] = index;
 
         Pebble.sendAppMessage(combined_watch_data, function() {
             console.log('Message sent successfully: ' + JSON.stringify(combined_watch_data));
@@ -123,7 +136,7 @@ function get_routes() {
                 console.log('Error parsing JSON from stops request');
                 return;
             }
-            let departures = new Array(json.stops.length);
+            let departures_by_stop = new Array(json.stops.length);
             for (const [index, stop] of json.stops.entries()) {
                 let departures_request = new XMLHttpRequest();
                 departures_request.onload = function() {
@@ -135,10 +148,10 @@ function get_routes() {
                         console.log('Error parsing JSON from departures request');
                         return;
                     }
-                    departures[index] = [stop, departures_json.stops[0].departures];
-                    if (departures.filter(e => e != undefined || e != null).length == json.stops.length) {
-                        console.log(JSON.stringify(departures));
-                        send_to_watch(departures);
+                    departures_by_stop[index] = [stop, departures_json.stops[0].departures];
+                    if (departures_by_stop.filter(e => e != undefined || e != null).length == json.stops.length) {
+                        console.log(JSON.stringify(departures_by_stop));
+                        send_to_watch(departures_by_stop);
                     }
                 };
                 let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.onestop_id + "/departures");
