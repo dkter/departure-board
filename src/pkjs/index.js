@@ -95,6 +95,28 @@ function filter_departures(departures_by_stop) {
     return total_list;
 }
 
+function compare_distance_to_here_stops(lat, lon) {
+    return function(stop1, stop2) {
+        const stop1_lat = stop1.geometry.coordinates[1];
+        const stop1_lon = stop1.geometry.coordinates[0];
+        const stop2_lat = stop2.geometry.coordinates[1];
+        const stop2_lon = stop2.geometry.coordinates[0];
+        const dist1 = Math.sqrt(
+            Math.pow(stop1_lat - lat, 2) + Math.pow(stop1_lon - lon, 2)
+        );
+        const dist2 = Math.sqrt(
+            Math.pow(stop2_lat - lat, 2) + Math.pow(stop2_lon - lon, 2)
+        );
+        if (dist1 > dist2) {
+            return 1;
+        } else if (dist1 < dist2) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+}
+
 function get_routes() {
     const send_to_watch = function(departures_by_stop) {
         let combined_watch_data = {};
@@ -136,8 +158,9 @@ function get_routes() {
                 console.log('Error parsing JSON from stops request');
                 return;
             }
-            let departures_by_stop = new Array(json.stops.length);
-            for (const [index, stop] of json.stops.entries()) {
+            let sorted_stops = json.stops.toSorted(compare_distance_to_here_stops(pos.coords.latitude, pos.coords.longitude));
+            let departures_by_stop = new Array(sorted_stops.length);
+            for (const [index, stop] of sorted_stops.entries()) {
                 let departures_request = new XMLHttpRequest();
                 departures_request.onload = function() {
                     let departures_json = "";
@@ -149,8 +172,7 @@ function get_routes() {
                         return;
                     }
                     departures_by_stop[index] = [stop, departures_json.stops[0].departures];
-                    if (departures_by_stop.filter(e => e != undefined || e != null).length == json.stops.length) {
-                        console.log(JSON.stringify(departures_by_stop));
+                    if (departures_by_stop.filter(e => e != undefined || e != null).length == sorted_stops.length) {
                         send_to_watch(departures_by_stop);
                     }
                 };
