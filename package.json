@@ -33,6 +33,11 @@
       "media": [
         {
           "type": "raw",
+          "name": "PLANE",
+          "file": "Pebble_80x80_Scheduled_flight.pdc"
+        },
+        {
+          "type": "raw",
           "name": "STREETCAR_ANIM",
           "file": "streetcar_frames.pdc"
         },

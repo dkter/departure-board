@@ -25,20 +25,24 @@ static Layer *s_route_layer;
 static Layer *s_vehicle_background_layer;
 static Layer *s_vehicle_layer;
 static Layer *s_description_layer;
+static Layer *s_loading_layer;
+static GDrawCommandImage* s_plane_icon;
 static GDrawCommandSequence* s_streetcar_sequence;
 static GDrawCommandSequence* s_subway_sequence;
 static GDrawCommandSequence* s_bus_sequence;
 static GDrawCommandSequence* s_regional_train_sequence;
 static GDrawCommandSequence* s_vehicle_sequence;
+static GTextAttributes *s_loading_text_attributes;
 static int s_vehicle_frame_index = 9;
 
 static char time_text[8];
 static char stop_text[32];
 static char dest_text[32];
+static char loading_text[32];
 
 static WindowDataArray sample_data_arr = {
     .array = NULL,
-    .data_len = 5,
+    .data_len = 0,
     .data_index = 0,
     .anim_intermediates = {
         .color = NULL,
@@ -68,6 +72,12 @@ static void redraw_all() {
     text_layer_set_text(s_unit_layer, data->unit);
     set_stop_text(data);
     set_dest_text(data);
+
+    if (data_arr->data_len > 0) {
+        layer_set_hidden(s_loading_layer, true);
+    } else {
+        layer_set_hidden(s_loading_layer, false);
+    }
 
     layer_mark_dirty(window_get_root_layer(s_window));
 }
@@ -303,6 +313,30 @@ static void route_layer_update_proc(Layer *layer, GContext *ctx) {
 static void description_layer_update_proc(Layer *layer, GContext *ctx) {
 }
 
+static void loading_layer_update_proc(Layer *layer, GContext *ctx) {
+    WindowDataArray* data_arr = window_get_user_data(s_window);
+    GRect bounds = layer_get_bounds(layer);
+
+    const int icon_height = 80;
+    const int icon_padding = 10;
+
+    GPoint icon_origin = GPoint(bounds.origin.x + bounds.size.w / 2 - icon_height / 2,
+        bounds.origin.y + icon_padding);
+
+    GRect text_bounds = GRect(
+        bounds.origin.x, bounds.origin.y + icon_padding + icon_height + icon_padding,
+        bounds.size.w, bounds.size.h - icon_padding - icon_height - icon_padding);
+
+    graphics_context_set_fill_color(ctx, GColorPictonBlue);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+
+    gdraw_command_image_draw(ctx, s_plane_icon, icon_origin);
+
+    graphics_context_set_text_color(ctx, GColorBlack);
+    graphics_draw_text(ctx, loading_text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), text_bounds,
+        GTextOverflowModeWordWrap, GTextAlignmentCenter, s_loading_text_attributes);
+}
+
 static void create_time_layer(GRect bounds, WindowDataArray* data_arr) {
     s_time_layer = text_layer_create(GRect(0, 0, bounds.size.w - RIGHT_BAR_WIDTH - 2, 64));
     set_time_text(data_arr);
@@ -357,6 +391,14 @@ static void create_description(GRect bounds, WindowData* data) {
     layer_add_child(s_description_layer, text_layer_get_layer(s_dest_layer));
 }
 
+static void create_loading_layer(GRect bounds) {
+    s_loading_layer = layer_create(bounds);
+    layer_set_update_proc(s_loading_layer, loading_layer_update_proc);
+
+    s_loading_text_attributes = graphics_text_attributes_create();
+    graphics_text_attributes_enable_screen_text_flow(s_loading_text_attributes, 5);
+}
+
 static void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
@@ -386,6 +428,10 @@ static void window_load(Window *window) {
     create_route_layer(bounds);
     layer_add_child(s_description_layer, s_route_layer);
     layer_mark_dirty(s_route_layer);
+
+    create_loading_layer(bounds);
+    layer_add_child(window_layer, s_loading_layer);
+    layer_mark_dirty(s_loading_layer);
 }
 
 static void window_unload(Window *window) {
@@ -396,10 +442,13 @@ static void window_unload(Window *window) {
     layer_destroy(s_vehicle_background_layer);
     layer_destroy(s_vehicle_layer);
     layer_destroy(s_description_layer);
+    layer_destroy(s_loading_layer);
+    gdraw_command_image_destroy(s_plane_icon);
     gdraw_command_sequence_destroy(s_streetcar_sequence);
     gdraw_command_sequence_destroy(s_subway_sequence);
     gdraw_command_sequence_destroy(s_bus_sequence);
     gdraw_command_sequence_destroy(s_regional_train_sequence);
+    graphics_text_attributes_destroy(s_loading_text_attributes);
     layer_destroy(s_route_layer);
 }
 
@@ -449,6 +498,9 @@ static void init(void) {
         };
     }
 
+    snprintf(loading_text, sizeof(loading_text), "Finding nearby stops...");
+
+    s_plane_icon = gdraw_command_image_create_with_resource(RESOURCE_ID_PLANE);
     s_streetcar_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
     s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
     s_bus_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_BUS_ANIM);
