@@ -321,7 +321,7 @@ static void loading_layer_update_proc(Layer *layer, GContext *ctx) {
     const int icon_padding = 10;
 
     GPoint icon_origin = GPoint(bounds.origin.x + bounds.size.w / 2 - icon_height / 2,
-        bounds.origin.y + icon_padding);
+        bounds.origin.y + icon_padding + icon_padding);
 
     GRect text_bounds = GRect(
         bounds.origin.x, bounds.origin.y + icon_padding + icon_height + icon_padding,
