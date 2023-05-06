@@ -14,7 +14,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #define RIGHT_MARGIN 5
 #define SPACE 5
 #define DELTA 13
-#define MAX_ROUTES 6
+#define MAX_ROUTES 12
 
 static Window *s_window;
 static TextLayer *s_time_layer;
@@ -455,7 +455,7 @@ static void init(void) {
     s_regional_train_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_TRAIN_ANIM);
 
     app_message_register_inbox_received(inbox_received_callback);
-    const int inbox_size = 1024;
+    const int inbox_size = 2048;
     const int outbox_size = 32;
     app_message_open(inbox_size, outbox_size);
 

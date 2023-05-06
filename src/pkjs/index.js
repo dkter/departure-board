@@ -9,7 +9,7 @@ const keys = require('message_keys');
 const { corrections } = require('./operator_corrections');
 const { VehicleType, RouteShape, GColor } = require("./data");
 
-const MAX_WATCH_DATA = 6;
+const MAX_WATCH_DATA = 12;
 
 function rgb_to_pebble_colour(hexstr) {
     // adapted from https://github.com/pebble-examples/cards-example/blob/master/tools/pebble_image_routines.py
