@@ -83,3 +83,13 @@ exports.GColor = {
     "GColorPastelYellowARGB8": 0b11111110,
     "GColorWhiteARGB8": 0b11111111,
 }
+
+exports.Error = {
+    "NO_CONNECTION": -1,
+    "INVALID_API_KEY": -2,
+    "NO_RESULTS": -3,
+    "UNKNOWN_API_ERROR": -4,
+    "LOCATION_ACCESS_DENIED": -5,
+    "UNKNOWN_LOCATION_ERROR": -6,
+    "COULD_NOT_SEND_MESSAGE": -7,
+}

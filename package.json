@@ -38,6 +38,11 @@
         },
         {
           "type": "raw",
+          "name": "GENERIC_FAILED",
+          "file": "Pebble_80x80_Generic_failed.pdc"
+        },
+        {
+          "type": "raw",
           "name": "STREETCAR_ANIM",
           "file": "streetcar_frames.pdc"
         },

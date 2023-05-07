@@ -27,6 +27,7 @@ static Layer *s_vehicle_layer;
 static Layer *s_description_layer;
 static Layer *s_loading_layer;
 static GDrawCommandImage* s_plane_icon;
+static GDrawCommandImage* s_generic_failed_icon;
 static GDrawCommandSequence* s_streetcar_sequence;
 static GDrawCommandSequence* s_subway_sequence;
 static GDrawCommandSequence* s_bus_sequence;
@@ -42,7 +43,7 @@ static char loading_text[32];
 
 static WindowDataArray sample_data_arr = {
     .array = NULL,
-    .data_len = 0,
+    .data_len = LOADING,
     .data_index = 0,
     .anim_intermediates = {
         .color = NULL,
@@ -65,6 +66,35 @@ static void set_dest_text(WindowData* data) {
     text_layer_set_text(s_dest_layer, dest_text);
 }
 
+static void set_error_text(WindowDataArray* data_arr) {
+    switch (data_arr->data_len) {
+    case LOADING:
+        snprintf(loading_text, sizeof(loading_text), "Finding nearby stops...");
+        break;
+    case NO_CONNECTION:
+        snprintf(loading_text, sizeof(loading_text), "No connection");
+        break;
+    case INVALID_API_KEY:
+        snprintf(loading_text, sizeof(loading_text), "Invalid Transitland API key");
+        break;
+    case NO_RESULTS:
+        snprintf(loading_text, sizeof(loading_text), "No stops found");
+        break;
+    case UNKNOWN_API_ERROR:
+        snprintf(loading_text, sizeof(loading_text), "API returned unexpected result");
+        break;
+    case LOCATION_ACCESS_DENIED:
+        snprintf(loading_text, sizeof(loading_text), "You need to grant location access");
+        break;
+    case UNKNOWN_LOCATION_ERROR:
+        snprintf(loading_text, sizeof(loading_text), "Error getting location");
+        break;
+    case COULD_NOT_SEND_MESSAGE:
+        snprintf(loading_text, sizeof(loading_text), "Couldn't receive message from phone");
+        break;
+    }
+}
+
 static void redraw_all() {
     WindowDataArray* data_arr = window_get_user_data(s_window);
     WindowData* data = window_data_current(data_arr);
@@ -78,6 +108,7 @@ static void redraw_all() {
     } else {
         layer_set_hidden(s_loading_layer, false);
     }
+    set_error_text(data_arr);
 
     layer_mark_dirty(window_get_root_layer(s_window));
 }
@@ -327,10 +358,18 @@ static void loading_layer_update_proc(Layer *layer, GContext *ctx) {
         bounds.origin.x, bounds.origin.y + icon_padding + icon_height + icon_padding,
         bounds.size.w, bounds.size.h - icon_padding - icon_height - icon_padding);
 
-    graphics_context_set_fill_color(ctx, GColorPictonBlue);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-    gdraw_command_image_draw(ctx, s_plane_icon, icon_origin);
+    if (data_arr->data_len == 0) {
+        // icon for loading
+        graphics_context_set_fill_color(ctx, GColorPictonBlue);
+        graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+        gdraw_command_image_draw(ctx, s_plane_icon, icon_origin);
+    } else if (data_arr->data_len < 0) {
+        // icon for error
+        graphics_context_set_fill_color(ctx, GColorMelon);
+        graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+        gdraw_command_image_draw(ctx, s_generic_failed_icon, icon_origin);
+    }
 
     graphics_context_set_text_color(ctx, GColorBlack);
     graphics_draw_text(ctx, loading_text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), text_bounds,
@@ -444,6 +483,7 @@ static void window_unload(Window *window) {
     layer_destroy(s_description_layer);
     layer_destroy(s_loading_layer);
     gdraw_command_image_destroy(s_plane_icon);
+    gdraw_command_image_destroy(s_generic_failed_icon);
     gdraw_command_sequence_destroy(s_streetcar_sequence);
     gdraw_command_sequence_destroy(s_subway_sequence);
     gdraw_command_sequence_destroy(s_bus_sequence);
@@ -456,27 +496,29 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
     Tuple* num_routes = dict_find(iter, MESSAGE_KEY_num_routes);
     if (num_routes) {
         sample_data_arr.data_len = num_routes->value->int16;
-        sample_data_arr.data_index = 0;
-        for (int i = 0; i < sample_data_arr.data_len; i += 1) {
-            Tuple* time = dict_find(iter, MESSAGE_KEY_time + i);
-            Tuple* unit = dict_find(iter, MESSAGE_KEY_unit + i);
-            Tuple* stop_name = dict_find(iter, MESSAGE_KEY_stop_name + i);
-            Tuple* dest_name = dict_find(iter, MESSAGE_KEY_dest_name + i);
-            Tuple* route_number = dict_find(iter, MESSAGE_KEY_route_number + i);
-            Tuple* route_name = dict_find(iter, MESSAGE_KEY_route_name + i);
-            Tuple* vehicle_type = dict_find(iter, MESSAGE_KEY_vehicle_type + i);
-            Tuple* color = dict_find(iter, MESSAGE_KEY_color + i);
-            Tuple* shape = dict_find(iter, MESSAGE_KEY_shape + i);
+        if (sample_data_arr.data_len > 0) {
+            sample_data_arr.data_index = 0;
+            for (int i = 0; i < sample_data_arr.data_len; i += 1) {
+                Tuple* time = dict_find(iter, MESSAGE_KEY_time + i);
+                Tuple* unit = dict_find(iter, MESSAGE_KEY_unit + i);
+                Tuple* stop_name = dict_find(iter, MESSAGE_KEY_stop_name + i);
+                Tuple* dest_name = dict_find(iter, MESSAGE_KEY_dest_name + i);
+                Tuple* route_number = dict_find(iter, MESSAGE_KEY_route_number + i);
+                Tuple* route_name = dict_find(iter, MESSAGE_KEY_route_name + i);
+                Tuple* vehicle_type = dict_find(iter, MESSAGE_KEY_vehicle_type + i);
+                Tuple* color = dict_find(iter, MESSAGE_KEY_color + i);
+                Tuple* shape = dict_find(iter, MESSAGE_KEY_shape + i);
 
-            sample_data_arr.array[i].time = time->value->int16;
-            strncpy(sample_data_arr.array[i].unit, unit->value->cstring, 32);
-            strncpy(sample_data_arr.array[i].stop_name, stop_name->value->cstring, 32);
-            strncpy(sample_data_arr.array[i].dest_name, dest_name->value->cstring, 32);
-            strncpy(sample_data_arr.array[i].route_number, route_number->value->cstring, 32);
-            strncpy(sample_data_arr.array[i].route_name, route_name->value->cstring, 32);
-            sample_data_arr.array[i].vehicle_type = (VehicleType)vehicle_type->value->int16;
-            sample_data_arr.array[i].color = (GColor){.argb=color->value->int16};
-            sample_data_arr.array[i].shape = (RouteShape)shape->value->int16;
+                sample_data_arr.array[i].time = time->value->int16;
+                strncpy(sample_data_arr.array[i].unit, unit->value->cstring, 32);
+                strncpy(sample_data_arr.array[i].stop_name, stop_name->value->cstring, 32);
+                strncpy(sample_data_arr.array[i].dest_name, dest_name->value->cstring, 32);
+                strncpy(sample_data_arr.array[i].route_number, route_number->value->cstring, 32);
+                strncpy(sample_data_arr.array[i].route_name, route_name->value->cstring, 32);
+                sample_data_arr.array[i].vehicle_type = (VehicleType)vehicle_type->value->int16;
+                sample_data_arr.array[i].color = (GColor){.argb=color->value->int16};
+                sample_data_arr.array[i].shape = (RouteShape)shape->value->int16;
+            }
         }
         redraw_all();
     }
@@ -498,9 +540,10 @@ static void init(void) {
         };
     }
 
-    snprintf(loading_text, sizeof(loading_text), "Finding nearby stops...");
+    set_error_text(&sample_data_arr);
 
     s_plane_icon = gdraw_command_image_create_with_resource(RESOURCE_ID_PLANE);
+    s_generic_failed_icon = gdraw_command_image_create_with_resource(RESOURCE_ID_GENERIC_FAILED);
     s_streetcar_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
     s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
     s_bus_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_BUS_ANIM);

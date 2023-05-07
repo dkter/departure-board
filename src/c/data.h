@@ -26,6 +26,17 @@ typedef enum {
     CIRCLE = 2,
 } RouteShape;
 
+typedef enum {
+    LOADING = 0,
+    NO_CONNECTION = -1,
+    INVALID_API_KEY = -2,
+    NO_RESULTS = -3,
+    UNKNOWN_API_ERROR = -4,
+    LOCATION_ACCESS_DENIED = -5,
+    UNKNOWN_LOCATION_ERROR = -6,
+    COULD_NOT_SEND_MESSAGE = -7,
+} Error;
+
 typedef struct {
     int16_t time;
     char* unit;

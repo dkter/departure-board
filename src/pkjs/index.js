@@ -7,7 +7,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 const apikey = require('./apikey');
 const keys = require('message_keys');
 const { corrections } = require('./operator_corrections');
-const { VehicleType, RouteShape, GColor } = require("./data");
+const { VehicleType, RouteShape, GColor, Error } = require("./data");
 
 const MAX_WATCH_DATA = 12;
 
@@ -117,6 +117,14 @@ function compare_distance_to_here_stops(lat, lon) {
     }
 }
 
+function send_error(error) {
+    Pebble.sendAppMessage({"num_routes": error}, function() {
+        console.log('Error message sent successfully');
+    }, function(e) {
+        console.log('Error message failed: ' + JSON.stringify(e));
+    });
+}
+
 function get_routes() {
     const send_to_watch = function(departures_by_stop) {
         let combined_watch_data = {};
@@ -138,10 +146,16 @@ function get_routes() {
             combined_watch_data[keys.num_routes] = index + 1;
         }
 
+        if (filtered_deps.length == 0) {
+            send_error(Error.NO_RESULTS);
+            return;
+        }
+
         Pebble.sendAppMessage(combined_watch_data, function() {
             console.log('Message sent successfully: ' + JSON.stringify(combined_watch_data));
         }, function(e) {
             console.log('Message failed: ' + JSON.stringify(e));
+            send_error(Error.COULD_NOT_SEND_MESSAGE);
         });
     }
 
@@ -156,6 +170,11 @@ function get_routes() {
                 json = JSON.parse(this.responseText);
             } catch(err) {
                 console.log('Error parsing JSON from stops request');
+                send_error(Error.UNKNOWN_API_ERROR);
+                return;
+            }
+            if (json.message == 'Invalid authentication credentials') {
+                send_error(Error.INVALID_API_KEY);
                 return;
             }
             let sorted_stops = json.stops.toSorted(compare_distance_to_here_stops(pos.coords.latitude, pos.coords.longitude));
@@ -169,13 +188,17 @@ function get_routes() {
                     }
                     catch (err) {
                         console.log('Error parsing JSON from departures request');
+                        send_error(Error.UNKNOWN_API_ERROR);
                         return;
                     }
                     departures_by_stop[index] = [stop, departures_json.stops[0].departures];
                     if (departures_by_stop.filter(e => e != undefined || e != null).length == sorted_stops.length) {
                         send_to_watch(departures_by_stop);
                     }
-                };
+                }; 
+                departures_request.onerror = function() {
+                    send_error(Error.NO_CONNECTION);
+                }
                 let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.onestop_id + "/departures");
                 departures_url.search = new URLSearchParams({
                     "apikey": apikey.TRANSITLAND_KEY,
@@ -184,6 +207,9 @@ function get_routes() {
                 departures_request.send();
             }
         };
+        request.onerror = function() {
+            send_error(Error.NO_CONNECTION);
+        }
         let stops_endpoint_url = new URL("https://transit.land/api/v2/rest/stops");
         stops_endpoint_url.search = new URLSearchParams({
             "lat": pos.coords.latitude,
@@ -198,8 +224,10 @@ function get_routes() {
     const location_error = function(err) {
         if(err.code == err.PERMISSION_DENIED) {
             console.log('Location access was denied by the user.');  
+            send_error(Error.LOCATION_ACCESS_DENIED);
         } else {
             console.log('location error (' + err.code + '): ' + err.message);
+            send_error(Error.UNKNOWN_LOCATION_ERROR);
         }
     }
 
