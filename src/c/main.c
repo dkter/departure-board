@@ -28,6 +28,7 @@ static Layer *s_description_layer;
 static Layer *s_loading_layer;
 static GDrawCommandImage* s_plane_icon;
 static GDrawCommandImage* s_generic_failed_icon;
+static GDrawCommandImage* s_no_internet_icon;
 static GDrawCommandSequence* s_streetcar_sequence;
 static GDrawCommandSequence* s_subway_sequence;
 static GDrawCommandSequence* s_bus_sequence;
@@ -374,7 +375,11 @@ static void loading_layer_update_proc(Layer *layer, GContext *ctx) {
         // icon for error
         graphics_context_set_fill_color(ctx, GColorMelon);
         graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-        gdraw_command_image_draw(ctx, s_generic_failed_icon, icon_origin);
+        if (data_arr->data_len == NO_CONNECTION) {
+            gdraw_command_image_draw(ctx, s_no_internet_icon, icon_origin);
+        } else {
+            gdraw_command_image_draw(ctx, s_generic_failed_icon, icon_origin);
+        }
     }
 
     graphics_context_set_text_color(ctx, GColorBlack);
@@ -490,6 +495,7 @@ static void window_unload(Window *window) {
     layer_destroy(s_loading_layer);
     gdraw_command_image_destroy(s_plane_icon);
     gdraw_command_image_destroy(s_generic_failed_icon);
+    gdraw_command_image_destroy(s_no_internet_icon);
     gdraw_command_sequence_destroy(s_streetcar_sequence);
     gdraw_command_sequence_destroy(s_subway_sequence);
     gdraw_command_sequence_destroy(s_bus_sequence);
@@ -550,6 +556,7 @@ static void init(void) {
 
     s_plane_icon = gdraw_command_image_create_with_resource(RESOURCE_ID_PLANE);
     s_generic_failed_icon = gdraw_command_image_create_with_resource(RESOURCE_ID_GENERIC_FAILED);
+    s_no_internet_icon = gdraw_command_image_create_with_resource(RESOURCE_ID_NO_INTERNET);
     s_streetcar_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_STREETCAR_ANIM);
     s_subway_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_SUBWAY_ANIM);
     s_bus_sequence = gdraw_command_sequence_create_with_resource(RESOURCE_ID_BUS_ANIM);
