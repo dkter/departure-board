@@ -62,7 +62,13 @@ static void set_stop_text(WindowData* data) {
 }
 
 static void set_dest_text(WindowData* data) {
-    snprintf(dest_text, sizeof(dest_text), "to %s", data->dest_name);
+    if (data->dest_name[0] != 0) {
+        snprintf(dest_text, sizeof(dest_text), "to %s", data->dest_name);
+    } else {
+        // set dest_text to empty
+        dest_text[0] = 0;
+    }
+
     text_layer_set_text(s_dest_layer, dest_text);
 }
 
