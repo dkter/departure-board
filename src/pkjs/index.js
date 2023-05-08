@@ -34,8 +34,14 @@ function get_mins_to_hhmmss(datestr, timestr) {
     // but UTC. timestr is going to be in the local timezone. so
     // adjust now_date so it outputs as local time when converted to UTC?
     now_date.setMinutes(now_date.getMinutes() - now_date.getTimezoneOffset());
-    const future_iso_str = datestr + "T" + timestr + ".000Z";
+    // datestr doesn't seem reliable (on May 6 I was getting TTC routes with service_date set to May 13)
+    // so... just assume the trip is in the next 24 hours idk
+    const now_datestr = now_date.toISOString().split("T")[0];
+    const future_iso_str = now_datestr + "T" + timestr + ".000Z";
     const future_timestamp = Date.parse(future_iso_str);
+    if (future_timestamp < now_date) {
+        future_timestamp.setDate(future_timestamp.getDate() + 1);
+    }
     const minutes = Math.round((future_timestamp - now_date) / 60000);
     return minutes;
 }
