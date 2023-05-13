@@ -10,6 +10,7 @@ const { corrections } = require('./operator_corrections');
 const { VehicleType, RouteShape, GColor, Error } = require("./data");
 
 const MAX_WATCH_DATA = 12;
+const SEARCH_RADIUS_M = 500;
 
 function rgb_to_pebble_colour(hexstr) {
     // adapted from https://github.com/pebble-examples/cards-example/blob/master/tools/pebble_image_routines.py
@@ -220,7 +221,7 @@ function get_routes() {
         stops_endpoint_url.search = new URLSearchParams({
             "lat": pos.coords.latitude,
             "lon": pos.coords.longitude,
-            "radius": 300,
+            "radius": SEARCH_RADIUS_M,
             "apikey": apikey.TRANSITLAND_KEY,
         }).toString();
         request.open("GET", stops_endpoint_url);
