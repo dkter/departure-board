@@ -8,8 +8,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #include "anim_vehicle.h"
 #include "data.h"
 
-static const uint32_t VEHICLE_SCROLL_DURATION = 240;
-static const int16_t VEHICLE_SCROLL_DIST = 60;
+static const uint32_t VEHICLE_SCROLL_DURATION = 200;
+static const int16_t VEHICLE_SCROLL_DIST = 40;
 
 static Animation* out_anim = NULL;
 static Animation* in_anim = NULL;

@@ -190,7 +190,7 @@ static void close_door_frame_handler(void* context) {
 }
 
 static void _open_door_frame_handler(Animation* animation, bool finished, void* context) {
-    app_timer_register(400, open_door_frame_handler, NULL);
+    app_timer_register(600, open_door_frame_handler, NULL);
 }
 
 static Animation *create_scroll_anim(ScrollDirection direction) {
@@ -208,7 +208,7 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
     Animation* vehicle_out_anim = create_vehicle_outbound_anim(direction, s_vehicle_layer);
     Animation* vehicle_in_anim = create_vehicle_inbound_anim(opposite_direction, s_vehicle_layer);
     Animation* vehicle_sequence = animation_sequence_create(vehicle_out_anim, vehicle_in_anim, NULL);
-    animation_set_delay(vehicle_sequence, 200);
+    animation_set_delay(vehicle_sequence, 260);
     GColor* next_color = (direction == ScrollDirectionDown)
         ? &(window_data_next(&sample_data_arr)->color)
         : &(window_data_prev(&sample_data_arr)->color);
@@ -224,7 +224,6 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
         colour_anim,
         number_anim,
         NULL);
-    animation_set_delay(sequence, 140);
     animation_set_handlers(sequence, (AnimationHandlers) {
         .stopped = anim_after_scroll,
     }, NULL);
