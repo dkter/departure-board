@@ -8,5 +8,5 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #include <pebble.h>
 #include "data.h"
 
-Animation *create_vehicle_outbound_anim(ScrollDirection direction, Layer* vehicle_layer);
+Animation *create_vehicle_outbound_anim(ScrollDirection direction, Layer* vehicle_layer, AnimationStoppedHandler stopped_handler);
 Animation *create_vehicle_inbound_anim(ScrollDirection direction, Layer* vehicle_layer);

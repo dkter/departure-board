@@ -36,6 +36,7 @@ static GDrawCommandSequence* s_regional_train_sequence;
 static GDrawCommandSequence* s_vehicle_sequence;
 static GTextAttributes *s_loading_text_attributes;
 static int s_vehicle_frame_index = 9;
+static AppTimer *s_door_anim_timer;
 
 static char time_text[8];
 static char stop_text[32];
@@ -169,15 +170,15 @@ static void anim_after_scroll(Animation *animation, bool finished, void *context
     redraw_all();
 }
 
-static void set_door_open() {
-    s_vehicle_frame_index = (int)gdraw_command_sequence_get_num_frames(s_vehicle_sequence);
+static void set_door_closed() {
+    s_vehicle_frame_index = 0;
 }
 
 static void open_door_frame_handler(void* context) {
     if (s_vehicle_frame_index < (int)gdraw_command_sequence_get_num_frames(s_vehicle_sequence) - 1) {
         s_vehicle_frame_index += 1;
         layer_mark_dirty(s_vehicle_layer);
-        app_timer_register(DELTA, open_door_frame_handler, NULL);
+        s_door_anim_timer = app_timer_register(DELTA, open_door_frame_handler, NULL);
     }
 }
 
@@ -185,12 +186,23 @@ static void close_door_frame_handler(void* context) {
     if (s_vehicle_frame_index > 0) {
         s_vehicle_frame_index -= 1;
         layer_mark_dirty(s_vehicle_layer);
-        app_timer_register(DELTA, close_door_frame_handler, NULL);
+        s_door_anim_timer = app_timer_register(DELTA, close_door_frame_handler, NULL);
     }
 }
 
 static void _open_door_frame_handler(Animation* animation, bool finished, void* context) {
-    app_timer_register(600, open_door_frame_handler, NULL);
+    if (s_door_anim_timer == NULL) {
+        app_timer_cancel(s_door_anim_timer);
+    }
+    s_door_anim_timer = app_timer_register(600, open_door_frame_handler, NULL);
+}
+
+static void make_sure_door_is_closed_handler(Animation* animation, bool finished, void* context) {
+    if (s_door_anim_timer == NULL) {
+        app_timer_cancel(s_door_anim_timer);
+    }
+    s_door_anim_timer = NULL;
+    set_door_closed();
 }
 
 static Animation *create_scroll_anim(ScrollDirection direction) {
@@ -199,13 +211,12 @@ static Animation *create_scroll_anim(ScrollDirection direction) {
     animation_set_handlers(out_anim, (AnimationHandlers) {
         .stopped = (direction == ScrollDirectionDown) ? anim_during_scroll_inc : anim_during_scroll_dec,
     }, NULL);
-    set_door_open();
     app_timer_register(0, close_door_frame_handler, NULL);
     Animation* in_anim = create_text_inbound_anim(opposite_direction);
     animation_set_handlers(in_anim, (AnimationHandlers) {
         .stopped = _open_door_frame_handler,
     }, NULL);
-    Animation* vehicle_out_anim = create_vehicle_outbound_anim(direction, s_vehicle_layer);
+    Animation* vehicle_out_anim = create_vehicle_outbound_anim(direction, s_vehicle_layer, make_sure_door_is_closed_handler);
     Animation* vehicle_in_anim = create_vehicle_inbound_anim(opposite_direction, s_vehicle_layer);
     Animation* vehicle_sequence = animation_sequence_create(vehicle_out_anim, vehicle_in_anim, NULL);
     animation_set_delay(vehicle_sequence, 260);

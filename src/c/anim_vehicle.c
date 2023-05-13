@@ -14,7 +14,7 @@ static const int16_t VEHICLE_SCROLL_DIST = 40;
 static Animation* out_anim = NULL;
 static Animation* in_anim = NULL;
 
-Animation *create_vehicle_outbound_anim(ScrollDirection direction, Layer* vehicle_layer) {
+Animation *create_vehicle_outbound_anim(ScrollDirection direction, Layer* vehicle_layer, AnimationStoppedHandler stopped_handler) {
     if (animation_is_scheduled(out_anim)) {
         animation_unschedule(out_anim);
 
@@ -31,6 +31,9 @@ Animation *create_vehicle_outbound_anim(ScrollDirection direction, Layer* vehicl
     out_anim = (Animation *) property_animation_create_bounds_origin(vehicle_layer, NULL, &to_origin);
     animation_set_duration(out_anim, VEHICLE_SCROLL_DURATION);
     animation_set_curve(out_anim, AnimationCurveLinear);
+    animation_set_handlers(out_anim, (AnimationHandlers) {
+        .stopped = stopped_handler,
+    }, NULL);
 
     return out_anim;
 }
