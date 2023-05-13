@@ -85,15 +85,16 @@ function filter_departures(departures_by_stop) {
     for (const [stop, deps] of departures_by_stop) {
         let done_ids_this_stop = new Set();
         for (const dep of deps) {
-            if (done_ids_this_stop.has(dep.trip.route.id)) {
+            const route_dest_id = dep.trip.route.id << 32 + dep.trip.stop_pattern_id;
+            if (done_ids_this_stop.has(route_dest_id)) {
                 continue;
-            } else if (!done_ids.has(dep.trip.route.id)) {
+            } else if (!done_ids.has(route_dest_id)) {
                 priority.push([stop, dep]);
-                done_ids.add(dep.trip.route.id);
-                done_ids_this_stop.add(dep.trip.route.id);
+                done_ids.add(route_dest_id);
+                done_ids_this_stop.add(route_dest_id);
             } else {
                 last.push([stop, dep]);
-                done_ids_this_stop.add(dep.trip.route.id);
+                done_ids_this_stop.add(route_dest_id);
             }
         }
     }
