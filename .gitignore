@@ -1,3 +1,5 @@
 build/
+node_modules/
+package-lock.json
 .lock-waf_linux2_build
 apikey.js
