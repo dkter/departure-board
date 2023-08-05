@@ -47,9 +47,25 @@ function get_mins_to_hhmmss(datestr, timestr) {
     return minutes;
 }
 
+function get_departure_time(departure) {
+    if (departure.departure.estimated != null) {
+        return departure.departure.estimated;
+    } else if (departure.departure_time != null) {
+        return departure.departure_time;
+    } else if (departure.arrival.estimated != null) {
+        return departure.arrival.estimated;
+    } else if (departure.arrival_time != null) {
+        return departure.arrival_time;
+    } else {
+        console.log("Departure of " + departure.trip.route.route_long_name + " has no departure time");
+        send_error(Error.UNKNOWN_API_ERROR);
+        return null;
+    }
+}
+
 function dep_to_watch_data(stop, departure) {
     let watch_data = {};
-    watch_data[keys.time] = get_mins_to_hhmmss(departure.service_date, departure.departure_time);
+    watch_data[keys.time] = get_mins_to_hhmmss(departure.service_date, get_departure_time(departure));
     watch_data[keys.unit] = "min";
     watch_data[keys.stop_name] = stop.stop_name;
     watch_data[keys.dest_name] = departure.trip.trip_headsign;
