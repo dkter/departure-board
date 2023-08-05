@@ -100,6 +100,9 @@ static void set_error_text(WindowDataArray* data_arr) {
     case COULD_NOT_SEND_MESSAGE:
         snprintf(loading_text, sizeof(loading_text), "Couldn't receive message from phone");
         break;
+    case COULD_NOT_DECODE_MESSAGE:
+        snprintf(loading_text, sizeof(loading_text), "Phone sent broken message");
+        break;
     }
 }
 
@@ -530,6 +533,21 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
                 Tuple* vehicle_type = dict_find(iter, MESSAGE_KEY_vehicle_type + i);
                 Tuple* color = dict_find(iter, MESSAGE_KEY_color + i);
                 Tuple* shape = dict_find(iter, MESSAGE_KEY_shape + i);
+
+                if (time == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing time at index %d", i);
+                if (unit == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing unit at index %d", i);
+                if (stop_name == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing stop_name at index %d", i);
+                if (dest_name == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing dest_name at index %d", i);
+                if (route_number == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing route_number at index %d", i);
+                if (route_name == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing route_name at index %d", i);
+                if (vehicle_type == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing vehicle_type at index %d", i);
+                if (color == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing color at index %d", i);
+                if (shape == NULL) APP_LOG(APP_LOG_LEVEL_DEBUG, "Message from PKJS missing shape at index %d", i);
+                if (time == NULL || unit == NULL || stop_name == NULL || dest_name == NULL || route_number == NULL
+                    || route_name == NULL || vehicle_type == NULL || color == NULL || shape == NULL) {
+                    sample_data_arr.data_len = COULD_NOT_DECODE_MESSAGE;
+                    break;
+                }
 
                 sample_data_arr.array[i].time = time->value->int16;
                 strncpy(sample_data_arr.array[i].unit, unit->value->cstring, 32);

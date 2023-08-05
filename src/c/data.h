@@ -35,6 +35,7 @@ typedef enum {
     LOCATION_ACCESS_DENIED = -5,
     UNKNOWN_LOCATION_ERROR = -6,
     COULD_NOT_SEND_MESSAGE = -7,
+    COULD_NOT_DECODE_MESSAGE = -8,
 } Error;
 
 typedef struct {
