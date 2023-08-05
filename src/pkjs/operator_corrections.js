@@ -30,5 +30,17 @@ exports.corrections = {
     "GO Transit": function(json_stop, json_departure, watch_data) {
         watch_data[keys.dest_name] = watch_data[keys.dest_name].replace(watch_data[keys.route_number] + " - ", "")
         watch_data[keys.shape] = RouteShape.RECT;
+    },
+    "grt": function(json_stop, json_departure, watch_data) {
+        // iXpress is yellow
+        let route_number = parseInt(json_departure.trip.route.route_short_name);
+        if (200 <= route_number && route_number <= 299) {
+            watch_data[keys.color] = GColor.GColorLimerickARGB8;
+        }
+
+        // ION is blue
+        if (300 <= route_number && route_number <= 399) {
+            watch_data[keys.color] = GColor.GColorBlueARGB8;
+        }
     }
 }
