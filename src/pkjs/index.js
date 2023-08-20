@@ -39,9 +39,9 @@ function get_mins_to_hhmmss(datestr, timestr) {
     // so... just assume the trip is in the next 24 hours idk
     const now_datestr = now_date.toISOString().split("T")[0];
     const future_iso_str = now_datestr + "T" + timestr + ".000Z";
-    const future_timestamp = Date.parse(future_iso_str);
+    let future_timestamp = Date.parse(future_iso_str);
     if (future_timestamp < now_date) {
-        future_timestamp.setDate(future_timestamp.getDate() + 1);
+        future_timestamp = future_timestamp + 24*60*60*1000;
     }
     const minutes = Math.round((future_timestamp - now_date) / 60000);
     return minutes;
@@ -93,6 +93,19 @@ function dep_to_watch_data(stop, departure) {
     return watch_data;
 }
 
+function vehicle_already_departed(departure) {
+    if (departure.departure.estimated_utc == null) {
+        // transitland shouldn't return departures with scheduled times that already happened
+        return false;
+    }
+
+    const estimated_deptime = Date.parse(departure.departure.estimated_utc);
+
+    const now = Date.now();
+
+    return (estimated_deptime < now);
+}
+
 function filter_departures(departures_by_stop) {
     let done_ids = new Set();
     let priority = [];
@@ -103,6 +116,9 @@ function filter_departures(departures_by_stop) {
         for (const dep of deps) {
             const route_dest_id = dep.trip.route.id << 32 + dep.trip.stop_pattern_id;
             if (done_ids_this_stop.has(route_dest_id)) {
+                continue;
+            } else if (vehicle_already_departed(dep)) {
+                // according to the estimate, this vehicle already departed
                 continue;
             } else if (!done_ids.has(route_dest_id)) {
                 priority.push([stop, dep]);
