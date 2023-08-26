@@ -10,6 +10,10 @@ Create a file called `apikey.js` in `src/pkjs`, obtain a free Transitland API ke
 
     exports.TRANSITLAND_KEY = "YOUR KEY GOES HERE"
 
+If you have a [TransSee](https://transsee.ca) premium subscription, you can also add your TransSee user ID for real-time predictions:
+
+    exports.TRANSSEE_USERID = "YOUR USER ID GOES HERE"
+
 Run `npm install` to install dependencies for backporting the PebbleKit JS code to ES5 (this is necessary for iOS and the Pebble emulator, but you need to do this to build for Android as well. If it's like 5 years from now and everything is broken and you're only building for Android anyway and you just want a quick and dirty fix, try deleting everything in `dependencies` and `devDependencies` in package.json and the `ctx.env.WEBPACK` line in wscript? I haven't tried that but I think it should work).
 
 Then build the project with `pebble build`. Current (as of 2023) instructions for setting up the Pebble SDK can be found [here](https://github.com/andyburris/pebble-setup).
