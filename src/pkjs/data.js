@@ -93,3 +93,7 @@ exports.Error = {
     "UNKNOWN_LOCATION_ERROR": -6,
     "COULD_NOT_SEND_MESSAGE": -7,
 }
+
+exports.agencies_by_onestop_name = {
+    "grandrivertransit": "grt",
+}

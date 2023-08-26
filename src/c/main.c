@@ -65,7 +65,7 @@ static void set_stop_text(WindowData* data) {
 
 static void set_dest_text(WindowData* data) {
     if (data->dest_name[0] != 0) {
-        snprintf(dest_text, sizeof(dest_text), "to %s", data->dest_name);
+        snprintf(dest_text, sizeof(dest_text), "%s", data->dest_name);
     } else {
         // set dest_text to empty
         dest_text[0] = 0;

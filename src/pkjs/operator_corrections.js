@@ -8,7 +8,7 @@ const { VehicleType, RouteShape, GColor } = require("./data");
 const { titleCaps } = require("./title_caps");
 const keys = require('message_keys');
 
-exports.corrections = {
+exports.corrections_transitland = {
     "TTC": function(json_stop, json_departure, watch_data) {
         watch_data[keys.dest_name] = json_departure.trip.trip_headsign.split(" towards ")[1];
 
@@ -20,7 +20,7 @@ exports.corrections = {
 
         // TTC data has these in all caps which is annoying
         watch_data[keys.route_name] = titleCaps(watch_data[keys.route_name].toLowerCase());
-        watch_data[keys.dest_name] = titleCaps(watch_data[keys.dest_name].toLowerCase());
+        watch_data[keys.dest_name] = "to " + titleCaps(watch_data[keys.dest_name].toLowerCase());
 
         let route_number = parseInt(json_departure.trip.route.route_short_name);
         if (1 <= route_number && route_number <= 6) {
@@ -42,5 +42,29 @@ exports.corrections = {
         if (300 <= route_number && route_number <= 399) {
             watch_data[keys.color] = GColor.GColorBlueARGB8;
         }
+    }
+}
+
+exports.corrections_transsee = {
+    "Toronto TTC": function(stop, route, direction, prediction, watch_data) {
+        const route_number = parseInt(route.routeTag);
+        if (1 <= route_number && route_number <= 6) {
+            watch_data[keys.shape] = RouteShape.CIRCLE;
+            watch_data[keys.vehicle_type] = VehicleType.SUBWAY;
+        }
+        if (["501", "502", "503", "504", "504A", "504B", "505", "506",
+            "507", "508", "509", "510", "511", "512", "513", "514",
+            "301", "304", "306", "310"].includes(route.routeTag)) {
+            watch_data[keys.vehicle_type] = VehicleType.STREETCAR;
+        }
+
+        // make the stop name a little shorter
+        watch_data[keys.stop_name] = watch_data[keys.stop_name].replaceAll(/ (St|Av|Ave|Dr|Rd)( East| West)? at /g, " / ")
+            .replaceAll(/ (St|Av|Ave|Dr|Rd)( East| West)?$/g, "");
+
+        watch_data[keys.route_name] = watch_data[keys.route_name].replace(/LINE \d \((.+)\)/, "$1");
+    },
+    "GO Transit": function(stop, route, direction, prediction, watch_data) {
+        watch_data[keys.shape] = RouteShape.RECT;
     }
 }

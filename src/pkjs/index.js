@@ -6,8 +6,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 const apikey = require('./apikey');
 const keys = require('message_keys');
-const { corrections } = require('./operator_corrections');
-const { VehicleType, RouteShape, GColor, Error } = require("./data");
+const { corrections_transitland, corrections_transsee } = require('./operator_corrections');
+const { VehicleType, RouteShape, GColor, Error, agencies_by_onestop_name } = require("./data");
 
 const MAX_WATCH_DATA = 12;
 const SEARCH_RADIUS_M = 500;
@@ -68,7 +68,7 @@ function dep_to_watch_data(stop, departure) {
     watch_data[keys.time] = get_mins_to_hhmmss(departure.service_date, get_departure_time(departure));
     watch_data[keys.unit] = "min";
     watch_data[keys.stop_name] = stop.stop_name;
-    watch_data[keys.dest_name] = departure.trip.trip_headsign;
+    watch_data[keys.dest_name] = "to " + departure.trip.trip_headsign;
     watch_data[keys.route_number] = departure.trip.route.route_short_name;
     watch_data[keys.route_name] = departure.trip.route.route_long_name;
     // https://gtfs.org/schedule/reference/#routestxt
@@ -86,8 +86,27 @@ function dep_to_watch_data(stop, departure) {
     watch_data[keys.color] = rgb_to_pebble_colour(departure.trip.route.route_color);
     watch_data[keys.shape] = RouteShape.ROUNDRECT;
 
-    if (corrections.hasOwnProperty(departure.trip.route.agency.agency_name)) {
-        corrections[departure.trip.route.agency.agency_name](stop, departure, watch_data);
+    if (corrections_transitland.hasOwnProperty(departure.trip.route.agency.agency_name)) {
+        corrections_transitland[departure.trip.route.agency.agency_name](stop, departure, watch_data);
+    }
+
+    return watch_data;
+}
+
+function transsee_dep_to_watch_data(stop, route, direction, prediction) {
+    let watch_data = {};
+    watch_data[keys.time] = parseInt(prediction.minutes);
+    watch_data[keys.unit] = "min";
+    watch_data[keys.stop_name] = stop.stop_name;
+    watch_data[keys.dest_name] = direction;
+    watch_data[keys.route_number] = route.routeTag;
+    watch_data[keys.route_name] = route.routeTitle.replace(watch_data[keys.route_number] + "-", "");
+    watch_data[keys.vehicle_type] = VehicleType.BUS;
+    watch_data[keys.color] = rgb_to_pebble_colour(route.color);
+    watch_data[keys.shape] = RouteShape.ROUNDRECT;
+
+    if (corrections_transsee.hasOwnProperty(route.agencyTitle)) {
+        corrections_transsee[route.agencyTitle](stop, route, direction, prediction, watch_data);
     }
 
     return watch_data;
@@ -119,6 +138,7 @@ function filter_departures(departures_by_stop) {
                 continue;
             } else if (vehicle_already_departed(dep)) {
                 // according to the estimate, this vehicle already departed
+                console.log("Skipping " + dep.departure.estimated_utc);
                 continue;
             } else if (!done_ids.has(route_dest_id)) {
                 priority.push([stop, dep]);
@@ -165,14 +185,12 @@ function send_error(error) {
     });
 }
 
-function send_to_watch(departures_by_stop) {
+function send_to_watch(departures_for_watch) {
     let combined_watch_data = {};
-    let filtered_deps = filter_departures(departures_by_stop);
-    for (const [index, [stop, dep]] of filtered_deps.entries()) {
+    for (const [index, watch_data] of departures_for_watch.entries()) {
         if (index == MAX_WATCH_DATA) {
             break;
         }
-        const watch_data = dep_to_watch_data(stop, dep);
         combined_watch_data[keys.time + index] = watch_data[keys.time];
         combined_watch_data[keys.unit + index] = watch_data[keys.unit];
         combined_watch_data[keys.stop_name + index] = watch_data[keys.stop_name];
@@ -185,7 +203,7 @@ function send_to_watch(departures_by_stop) {
         combined_watch_data[keys.num_routes] = index + 1;
     }
 
-    if (filtered_deps.length == 0) {
+    if (departures_for_watch.length == 0) {
         send_error(Error.NO_RESULTS);
         return;
     }
@@ -224,7 +242,7 @@ async function get_stops(lat, lon, radius) {
     return json.stops.toSorted(compare_distance_to_here_stops(lat, lon));
 }
 
-async function get_departures(stop) {
+async function get_departures_transitland(stop) {
     let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.onestop_id + "/departures");
     departures_url.search = new URLSearchParams({
         "apikey": apikey.TRANSITLAND_KEY,
@@ -247,21 +265,79 @@ async function get_departures(stop) {
     return json.stops[0].departures;
 }
 
-async function get_departures_by_stop(lat, lon, radius) {
+async function get_departures_transsee(stop) {
+    if (!apikey.hasOwnProperty("TRANSSEE_USERID")) {
+        throw new Error("TRANSSEE_USERID is not set");
+    }
+
+    let agency = stop.feed_version.feed.onestop_id.split('-').pop();
+    if (agencies_by_onestop_name.hasOwnProperty(agency)) {
+        agency = agencies_by_onestop_name[agency];
+    }
+
+    let departures_url = new URL("http://transsee.ca/publicJSONFeed");
+    departures_url.search = new URLSearchParams({
+        "command": "predictions",
+        "premium": apikey.TRANSSEE_USERID,
+        "a": agency,
+        "stopId": stop.stop_code,
+    });
+
+    const response = await fetch(departures_url).catch((e) => {
+        send_error(Error.NO_CONNECTION);
+        throw e;
+    });
+    if (response.status == 500) {
+        // sometimes this means invalid API key
+        send_error(Error.INVALID_API_KEY);
+        throw new Error(await response.body.getReader().read());
+    }
+    const json = await response.json().catch((e) => {
+        console.log('Error parsing JSON from TransSee predictions request');
+        send_error(Error.UNKNOWN_API_ERROR);
+        throw e;
+    });
+
+    return json.predictions;
+}
+
+async function get_departures_for_watch(lat, lon, radius) {
     const stops = await get_stops(lat, lon, radius);
-    const departures_by_index = await Promise.all(stops.map(get_departures));
+
+    let departures_by_index;
+    try {
+        departures_by_index = await Promise.all(stops.map(get_departures_transsee));
+    } catch (e) {
+        // no transsee API key; fall back on transitland
+        departures_by_index = await Promise.all(stops.map(get_departures_transitland));
+        const departures_by_stop = departures_by_index.map(
+            (departures, index) => [stops[index], departures]);
+
+        const filtered = filter_departures(departures_by_stop);
+        return filtered.map(([stop, dep]) => dep_to_watch_data(stop, dep));
+    }
     const departures_by_stop = departures_by_index.map(
         (departures, index) => [stops[index], departures]);
 
-    return departures_by_stop;
+    let departures_for_watch = [];
+    for ([stop, dep] of departures_by_stop) {
+        for (route of dep) {
+            if (!route.hasOwnProperty("direction")) continue;
+            for (direction of route.direction) {
+                if (!direction.hasOwnProperty("prediction")) continue;
+                departures_for_watch.push(transsee_dep_to_watch_data(stop, route, direction.title, direction.prediction[0]));
+            }
+        }
+    }
+    return departures_for_watch;
 }
 
 function get_routes() {
     const location_success = function(pos) {
         console.log('lat= ' + pos.coords.latitude + ' lon= ' + pos.coords.longitude);
 
-        get_departures_by_stop(pos.coords.latitude, pos.coords.longitude, SEARCH_RADIUS_M).then(
-            (departures_by_stop) => send_to_watch(departures_by_stop));
+        get_departures_for_watch(pos.coords.latitude, pos.coords.longitude, SEARCH_RADIUS_M).then(
+            (departures_for_watch) => send_to_watch(departures_for_watch));
     }
 
     const location_error = function(err) {
