@@ -165,100 +165,103 @@ function send_error(error) {
     });
 }
 
-function get_routes() {
-    const send_to_watch = function(departures_by_stop) {
-        let combined_watch_data = {};
-        let filtered_deps = filter_departures(departures_by_stop);
-        for (const [index, [stop, dep]] of filtered_deps.entries()) {
-            if (index == MAX_WATCH_DATA) {
-                break;
-            }
-            const watch_data = dep_to_watch_data(stop, dep);
-            combined_watch_data[keys.time + index] = watch_data[keys.time];
-            combined_watch_data[keys.unit + index] = watch_data[keys.unit];
-            combined_watch_data[keys.stop_name + index] = watch_data[keys.stop_name];
-            combined_watch_data[keys.dest_name + index] = watch_data[keys.dest_name];
-            combined_watch_data[keys.route_number + index] = watch_data[keys.route_number];
-            combined_watch_data[keys.route_name + index] = watch_data[keys.route_name];
-            combined_watch_data[keys.vehicle_type + index] = watch_data[keys.vehicle_type];
-            combined_watch_data[keys.color + index] = watch_data[keys.color];
-            combined_watch_data[keys.shape + index] = watch_data[keys.shape];
-            combined_watch_data[keys.num_routes] = index + 1;
+function send_to_watch(departures_by_stop) {
+    let combined_watch_data = {};
+    let filtered_deps = filter_departures(departures_by_stop);
+    for (const [index, [stop, dep]] of filtered_deps.entries()) {
+        if (index == MAX_WATCH_DATA) {
+            break;
         }
-
-        if (filtered_deps.length == 0) {
-            send_error(Error.NO_RESULTS);
-            return;
-        }
-
-        Pebble.sendAppMessage(combined_watch_data, function() {
-            console.log('Message sent successfully: ' + JSON.stringify(combined_watch_data));
-        }, function(e) {
-            console.log('Message failed: ' + JSON.stringify(e));
-            send_error(Error.COULD_NOT_SEND_MESSAGE);
-        });
+        const watch_data = dep_to_watch_data(stop, dep);
+        combined_watch_data[keys.time + index] = watch_data[keys.time];
+        combined_watch_data[keys.unit + index] = watch_data[keys.unit];
+        combined_watch_data[keys.stop_name + index] = watch_data[keys.stop_name];
+        combined_watch_data[keys.dest_name + index] = watch_data[keys.dest_name];
+        combined_watch_data[keys.route_number + index] = watch_data[keys.route_number];
+        combined_watch_data[keys.route_name + index] = watch_data[keys.route_name];
+        combined_watch_data[keys.vehicle_type + index] = watch_data[keys.vehicle_type];
+        combined_watch_data[keys.color + index] = watch_data[keys.color];
+        combined_watch_data[keys.shape + index] = watch_data[keys.shape];
+        combined_watch_data[keys.num_routes] = index + 1;
     }
 
+    if (filtered_deps.length == 0) {
+        send_error(Error.NO_RESULTS);
+        return;
+    }
+
+    Pebble.sendAppMessage(combined_watch_data, function() {
+        console.log('Message sent successfully: ' + JSON.stringify(combined_watch_data));
+    }, function(e) {
+        console.log('Message failed: ' + JSON.stringify(e));
+        send_error(Error.COULD_NOT_SEND_MESSAGE);
+    });
+}
+
+async function get_stops(lat, lon, radius) {
+    let stops_endpoint_url = new URL("https://transit.land/api/v2/rest/stops");
+    stops_endpoint_url.search = new URLSearchParams({
+        "lat": lat,
+        "lon": lon,
+        "radius": radius,
+        "apikey": apikey.TRANSITLAND_KEY,
+    }).toString();
+
+    const response = await fetch(stops_endpoint_url).catch((e) => {
+        send_error(Error.NO_CONNECTION);
+        throw e;
+    });
+    const json = await response.json().catch((e) => {
+        console.log('Error parsing JSON from stops request');
+        send_error(Error.UNKNOWN_API_ERROR);
+        throw e;
+    });
+    if (json.message == 'Invalid authentication credentials') {
+        send_error(Error.INVALID_API_KEY);
+        throw new Error(json.message);
+    }
+
+    return json.stops.toSorted(compare_distance_to_here_stops(lat, lon));
+}
+
+async function get_departures(stop) {
+    let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.onestop_id + "/departures");
+    departures_url.search = new URLSearchParams({
+        "apikey": apikey.TRANSITLAND_KEY,
+    }).toString();
+
+    const response = await fetch(departures_url).catch((e) => {
+        send_error(Error.NO_CONNECTION);
+        throw e;
+    });
+    const json = await response.json().catch((e) => {
+        console.log('Error parsing JSON from departures request');
+        send_error(Error.UNKNOWN_API_ERROR);
+        throw e;
+    });
+    if (json.message == 'Invalid authentication credentials') {
+        send_error(Error.INVALID_API_KEY);
+        throw new Error(json.message);
+    }
+
+    return json.stops[0].departures;
+}
+
+async function get_departures_by_stop(lat, lon, radius) {
+    const stops = await get_stops(lat, lon, radius);
+    const departures_by_index = await Promise.all(stops.map(get_departures));
+    const departures_by_stop = departures_by_index.map(
+        (departures, index) => [stops[index], departures]);
+
+    return departures_by_stop;
+}
+
+function get_routes() {
     const location_success = function(pos) {
         console.log('lat= ' + pos.coords.latitude + ' lon= ' + pos.coords.longitude);
 
-        let request = new XMLHttpRequest();
-
-        request.onload = function() {
-            let json = "";
-            try {
-                json = JSON.parse(this.responseText);
-            } catch(err) {
-                console.log('Error parsing JSON from stops request');
-                send_error(Error.UNKNOWN_API_ERROR);
-                return;
-            }
-            if (json.message == 'Invalid authentication credentials') {
-                send_error(Error.INVALID_API_KEY);
-                return;
-            }
-            let sorted_stops = json.stops.toSorted(compare_distance_to_here_stops(pos.coords.latitude, pos.coords.longitude));
-            let departures_by_stop = new Array(sorted_stops.length);
-            for (const [index, stop] of sorted_stops.entries()) {
-                let departures_request = new XMLHttpRequest();
-                departures_request.onload = function() {
-                    let departures_json = "";
-                    try {
-                        departures_json = JSON.parse(this.responseText);
-                    }
-                    catch (err) {
-                        console.log('Error parsing JSON from departures request');
-                        send_error(Error.UNKNOWN_API_ERROR);
-                        return;
-                    }
-                    departures_by_stop[index] = [stop, departures_json.stops[0].departures];
-                    if (departures_by_stop.filter(e => e != undefined || e != null).length == sorted_stops.length) {
-                        send_to_watch(departures_by_stop);
-                    }
-                }; 
-                departures_request.onerror = function() {
-                    send_error(Error.NO_CONNECTION);
-                }
-                let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.onestop_id + "/departures");
-                departures_url.search = new URLSearchParams({
-                    "apikey": apikey.TRANSITLAND_KEY,
-                }).toString();
-                departures_request.open("GET", departures_url);
-                departures_request.send();
-            }
-        };
-        request.onerror = function() {
-            send_error(Error.NO_CONNECTION);
-        }
-        let stops_endpoint_url = new URL("https://transit.land/api/v2/rest/stops");
-        stops_endpoint_url.search = new URLSearchParams({
-            "lat": pos.coords.latitude,
-            "lon": pos.coords.longitude,
-            "radius": SEARCH_RADIUS_M,
-            "apikey": apikey.TRANSITLAND_KEY,
-        }).toString();
-        request.open("GET", stops_endpoint_url);
-        request.send();
+        get_departures_by_stop(pos.coords.latitude, pos.coords.longitude, SEARCH_RADIUS_M).then(
+            (departures_by_stop) => send_to_watch(departures_by_stop));
     }
 
     const location_error = function(err) {
