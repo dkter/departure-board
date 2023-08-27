@@ -63,6 +63,14 @@ function get_departure_time(departure) {
     }
 }
 
+function get_agency_from_stop(stop) {
+    let agency = stop.feed_version.feed.onestop_id.split('-').pop();
+    if (agencies_by_onestop_name.hasOwnProperty(agency)) {
+        agency = agencies_by_onestop_name[agency];
+    }
+    return agency;
+}
+
 function dep_to_watch_data(stop, departure) {
     let watch_data = {};
     watch_data[keys.time] = get_mins_to_hhmmss(departure.service_date, get_departure_time(departure));
@@ -270,10 +278,7 @@ async function get_departures_transsee(stop) {
         throw new Error("TRANSSEE_USERID is not set");
     }
 
-    let agency = stop.feed_version.feed.onestop_id.split('-').pop();
-    if (agencies_by_onestop_name.hasOwnProperty(agency)) {
-        agency = agencies_by_onestop_name[agency];
-    }
+    const agency = get_agency_from_stop(stop);
 
     let departures_url = new URL("http://transsee.ca/publicJSONFeed");
     departures_url.search = new URLSearchParams({
@@ -301,9 +306,7 @@ async function get_departures_transsee(stop) {
     return json.predictions;
 }
 
-async function get_departures_for_watch(lat, lon, radius) {
-    const stops = await get_stops(lat, lon, radius);
-
+async function get_departures_for_watch_with_stops(stops) {
     let departures_by_index;
     try {
         departures_by_index = await Promise.all(stops.map(get_departures_transsee));
@@ -332,7 +335,21 @@ async function get_departures_for_watch(lat, lon, radius) {
     return departures_for_watch;
 }
 
-function get_routes() {
+async function get_departures_for_watch(lat, lon, radius) {
+    const stops = await get_stops(lat, lon, radius);
+    // store for later
+    localStorage.setItem("stops", JSON.stringify(stops));
+
+    return await get_departures_for_watch_with_stops(stops);
+}
+
+async function refresh_departures_for_watch() {
+    const stops = JSON.parse(localStorage.getItem("stops"));
+
+    return await get_departures_for_watch_with_stops(stops);
+}
+
+function get_location_and_routes() {
     const location_success = function(pos) {
         console.log('lat= ' + pos.coords.latitude + ' lon= ' + pos.coords.longitude);
 
@@ -364,5 +381,13 @@ function get_routes() {
 Pebble.addEventListener('ready', function() {
     // PebbleKit JS is ready!
     console.log('PebbleKit JS ready!');
-    get_routes();
+    get_location_and_routes();
+});
+
+Pebble.addEventListener('appmessage', function(event) {
+    // PebbleKit JS is ready!
+    console.log('Refreshing');
+
+    refresh_departures_for_watch().then(
+            (departures_for_watch) => send_to_watch(departures_for_watch));
 });

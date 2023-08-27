@@ -517,12 +517,18 @@ static void window_unload(Window *window) {
     layer_destroy(s_route_layer);
 }
 
+static void send_refresh(void* context) {
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+
+    app_message_outbox_send();
+}
+
 static void inbox_received_callback(DictionaryIterator *iter, void *context) {
     Tuple* num_routes = dict_find(iter, MESSAGE_KEY_num_routes);
     if (num_routes) {
         sample_data_arr.data_len = num_routes->value->int16;
         if (sample_data_arr.data_len > 0) {
-            sample_data_arr.data_index = 0;
             for (int i = 0; i < sample_data_arr.data_len; i += 1) {
                 Tuple* time = dict_find(iter, MESSAGE_KEY_time + i);
                 Tuple* unit = dict_find(iter, MESSAGE_KEY_unit + i);
@@ -561,6 +567,8 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
             }
         }
         redraw_all();
+
+        app_timer_register(60000, send_refresh, NULL);
     }
 }
 
@@ -579,6 +587,7 @@ static void init(void) {
             .shape = ROUNDRECT,
         };
     }
+    sample_data_arr.data_index = 0;
 
     set_error_text(&sample_data_arr);
 
