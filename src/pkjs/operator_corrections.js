@@ -58,6 +58,12 @@ exports.corrections_transsee = {
             watch_data[keys.vehicle_type] = VehicleType.STREETCAR;
         }
 
+        // not sure how to fix something like this other than making a special case for everything
+        if (prediction.dirTag.split("_")[2] == "506Cbus") {
+            watch_data[keys.route_number] = "506C";
+            watch_data[keys.vehicle_type] = VehicleType.BUS;
+        }
+
         // make the stop name a little shorter
         watch_data[keys.stop_name] = watch_data[keys.stop_name].replaceAll(/ (St|Av|Ave|Dr|Rd)( East| West)? at /g, " / ")
             .replaceAll(/ (St|Av|Ave|Dr|Rd)( East| West)?$/g, "");
