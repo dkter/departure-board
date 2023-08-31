@@ -6,7 +6,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 const apikey = require('./apikey');
 const keys = require('message_keys');
-const { corrections_transitland, corrections_transsee } = require('./operator_corrections');
+const corrections = require('./operator_corrections');
 const { VehicleType, RouteShape, GColor, Error, agencies_by_onestop_name, transsee_agencies } = require("./data");
 
 const MAX_WATCH_DATA = 12;
@@ -94,8 +94,8 @@ function dep_to_watch_data(stop, departure) {
     watch_data[keys.color] = rgb_to_pebble_colour(departure.trip.route.route_color);
     watch_data[keys.shape] = RouteShape.ROUNDRECT;
 
-    if (corrections_transitland.hasOwnProperty(departure.trip.route.agency.agency_name)) {
-        corrections_transitland[departure.trip.route.agency.agency_name](stop, departure, watch_data);
+    if (corrections.transitland.hasOwnProperty(departure.trip.route.agency.agency_name)) {
+        corrections.transitland[departure.trip.route.agency.agency_name](stop, departure, watch_data);
     }
 
     return watch_data;
@@ -113,8 +113,8 @@ function transsee_dep_to_watch_data(stop, route, direction, prediction) {
     watch_data[keys.color] = rgb_to_pebble_colour(route.color);
     watch_data[keys.shape] = RouteShape.ROUNDRECT;
 
-    if (corrections_transsee.hasOwnProperty(route.agencyTitle)) {
-        corrections_transsee[route.agencyTitle](stop, route, direction, prediction, watch_data);
+    if (corrections.transsee.hasOwnProperty(route.agencyTitle)) {
+        corrections.transsee[route.agencyTitle](stop, route, direction, prediction, watch_data);
     }
 
     return watch_data;
@@ -281,12 +281,23 @@ async function get_departures_transsee(stop) {
     const agency = get_agency_from_stop(stop);
 
     let departures_url = new URL("http://transsee.ca/publicJSONFeed");
-    departures_url.search = new URLSearchParams({
-        "command": "predictions",
-        "premium": apikey.TRANSSEE_USERID,
-        "a": agency,
-        "stopId": stop.stop_code,
-    });
+    if (corrections.stop_tag.hasOwnProperty(agency)) {
+        const {route_tag, stop_tag} = corrections.stop_tag[agency](stop);
+        departures_url.search = new URLSearchParams({
+            "command": "predictions",
+            "premium": apikey.TRANSSEE_USERID,
+            "a": agency,
+            "r": route_tag,
+            "s": stop_tag,
+        });
+    } else {
+        departures_url.search = new URLSearchParams({
+            "command": "predictions",
+            "premium": apikey.TRANSSEE_USERID,
+            "a": agency,
+            "stopId": stop.stop_code,
+        });
+    }
 
     const response = await fetch(departures_url).catch((e) => {
         send_error(Error.NO_CONNECTION);

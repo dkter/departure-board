@@ -8,7 +8,7 @@ const { VehicleType, RouteShape, GColor } = require("./data");
 const { titleCaps } = require("./title_caps");
 const keys = require('message_keys');
 
-exports.corrections_transitland = {
+exports.transitland = {
     "TTC": function(json_stop, json_departure, watch_data) {
         watch_data[keys.dest_name] = json_departure.trip.trip_headsign.split(" towards ")[1];
 
@@ -45,7 +45,7 @@ exports.corrections_transitland = {
     }
 }
 
-exports.corrections_transsee = {
+exports.transsee = {
     "Toronto TTC": function(stop, route, direction, prediction, watch_data) {
         const route_number = parseInt(route.routeTag);
         if (1 <= route_number && route_number <= 6) {
@@ -77,5 +77,15 @@ exports.corrections_transsee = {
         if (route.routeTag == "301") {
             watch_data[keys.vehicle_type] = VehicleType.STREETCAR;
         }
+    }
+}
+
+// these functions return tuples of route tag and stop tag
+// see https://retro.umoiq.com/xmlFeedDocs/NextBusXMLFeed.pdf page 12 for the difference
+// between stop IDs and stop tags
+// these corrections are used for agencies that don't have stop IDs, for example
+exports.stop_tag = {
+    "upexpress": function(stop) {
+        return ["UP", stop.stop_id];
     }
 }
