@@ -7,7 +7,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 const apikey = require('./apikey');
 const keys = require('message_keys');
 const { corrections_transitland, corrections_transsee } = require('./operator_corrections');
-const { VehicleType, RouteShape, GColor, Error, agencies_by_onestop_name } = require("./data");
+const { VehicleType, RouteShape, GColor, Error, agencies_by_onestop_name, transsee_agencies } = require("./data");
 
 const MAX_WATCH_DATA = 12;
 const SEARCH_RADIUS_M = 500;
@@ -294,8 +294,10 @@ async function get_departures_transsee(stop) {
     });
     if (response.status == 500) {
         // sometimes this means invalid API key
-        send_error(Error.INVALID_API_KEY);
-        throw new Error(await response.body.getReader().read());
+        send_error(Error.UNKNOWN_API_ERROR);
+        const text = await response.text();
+        console.log(text);
+        throw new Error(text);
     }
     const json = await response.json().catch((e) => {
         console.log('Error parsing JSON from TransSee predictions request');
@@ -307,23 +309,22 @@ async function get_departures_transsee(stop) {
 }
 
 async function get_departures_for_watch_with_stops(stops) {
-    let departures_by_index;
+    let transsee_stops = stops.filter((stop) => transsee_agencies.includes(get_agency_from_stop(stop)));
+    let transitland_stops = stops.filter((stop) => transsee_stops.includes(stop));
+    let transsee_departures_by_index;
+    let transitland_departures_by_index = await Promise.all(transitland_stops.map(get_departures_transitland));
     try {
-        departures_by_index = await Promise.all(stops.map(get_departures_transsee));
+        transsee_departures_by_index = await Promise.all(transsee_stops.map(get_departures_transsee));
     } catch (e) {
+        transsee_departures_by_index = [];
         // no transsee API key; fall back on transitland
-        departures_by_index = await Promise.all(stops.map(get_departures_transitland));
-        const departures_by_stop = departures_by_index.map(
-            (departures, index) => [stops[index], departures]);
-
-        const filtered = filter_departures(departures_by_stop);
-        return filtered.map(([stop, dep]) => dep_to_watch_data(stop, dep));
+        transitland_departures_by_index.push(...await Promise.all(transsee_stops.map(get_departures_transitland)));
     }
-    const departures_by_stop = departures_by_index.map(
-        (departures, index) => [stops[index], departures]);
+    const transsee_departures_by_stop = transsee_departures_by_index.map(
+        (departures, index) => [transsee_stops[index], departures]);
 
     let departures_for_watch = [];
-    for ([stop, dep] of departures_by_stop) {
+    for ([stop, dep] of transsee_departures_by_stop) {
         for (route of dep) {
             if (!route.hasOwnProperty("direction")) continue;
             for (direction of route.direction) {
@@ -332,6 +333,14 @@ async function get_departures_for_watch_with_stops(stops) {
             }
         }
     }
+    const transitland_departures_by_stop = transitland_departures_by_index.map(
+        (departures, index) => {
+            if (index < transitland_stops.length) return [transitland_stops[index], departures];
+            else return [transsee_stops[index - transitland_stops.length], departures]
+        });
+
+    const filtered = filter_departures(transitland_departures_by_stop);
+    departures_for_watch.push(...filtered.map(([stop, dep]) => dep_to_watch_data(stop, dep)));
     return departures_for_watch;
 }
 
