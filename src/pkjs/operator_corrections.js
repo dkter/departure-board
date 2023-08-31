@@ -72,5 +72,10 @@ exports.corrections_transsee = {
     },
     "GO Transit": function(stop, route, direction, prediction, watch_data) {
         watch_data[keys.shape] = RouteShape.RECT;
+    },
+    "Kitchener-Waterloo GRT": function(stop, route, direction, prediction, watch_data) {
+        if (route.routeTag == "301") {
+            watch_data[keys.vehicle_type] = VehicleType.STREETCAR;
+        }
     }
 }
