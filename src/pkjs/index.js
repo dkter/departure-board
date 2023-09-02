@@ -107,7 +107,11 @@ function transsee_dep_to_watch_data(stop, route, direction, prediction) {
     watch_data[keys.route_number] = route.routeTag;
     watch_data[keys.route_name] = route.routeTitle.replace(watch_data[keys.route_number] + "-", "");
     watch_data[keys.vehicle_type] = VehicleType.BUS;
-    watch_data[keys.color] = rgb_to_pebble_colour(route.color);
+    if (route.hasOwnProperty("color")) {
+        watch_data[keys.color] = rgb_to_pebble_colour(route.color);
+    } else {
+        watch_data[keys.color] = GColor.GColorBlackARGB8;
+    }
     watch_data[keys.shape] = RouteShape.ROUNDRECT;
 
     if (corrections.transsee.hasOwnProperty(route.agencyTitle)) {
@@ -347,7 +351,7 @@ async function get_departures_for_watch_with_stops(stops) {
                 try {
                     departures_for_watch.push(transsee_dep_to_watch_data(stop, route, direction.title, direction.prediction[0]));
                 } catch (e) {
-                    console.log(JSON.stringify(route));
+                    console.log("Failed to serialize route to watch data: " + JSON.stringify(route));
                     throw e;
                 }
             }
