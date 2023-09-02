@@ -73,8 +73,17 @@ exports.transsee = {
 
         watch_data[keys.route_name] = watch_data[keys.route_name].replace(/LINE \d \((.+)\)/, "$1");
     },
+    "Toronto TTC Subway": function(stop, route, direction, prediction, watch_data) {
+
+    },
     "GO Transit": function(stop, route, direction, prediction, watch_data) {
         watch_data[keys.shape] = RouteShape.RECT;
+    },
+    "GO Trains": function(stop, route, direction, prediction, watch_data) {
+        watch_data[keys.shape] = RouteShape.RECT;
+        watch_data[keys.vehicle_type] = VehicleType.REGIONAL_TRAIN;
+
+        watch_data[keys.dest_name] = "to " + direction.replace(watch_data[keys.route_number] + " - ", "");
     },
     "Kitchener-Waterloo GRT": function(stop, route, direction, prediction, watch_data) {
         if (route.routeTag == "301") {
