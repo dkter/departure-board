@@ -7,7 +7,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 const apikey = require('./apikey');
 const keys = require('message_keys');
 const corrections = require('./operator_corrections');
-const { VehicleType, RouteShape, GColor, Error, agencies_by_onestop_name, transsee_agencies } = require("./data");
+const { VehicleType, RouteShape, GColor, ErrorCode, agencies_by_onestop_name, transsee_agencies } = require("./data");
 
 const MAX_WATCH_DATA = 12;
 const SEARCH_RADIUS_M = 500;
@@ -58,17 +58,14 @@ function get_departure_time(departure) {
         return departure.arrival_time;
     } else {
         console.log("Departure of " + departure.trip.route.route_long_name + " has no departure time");
-        send_error(Error.UNKNOWN_API_ERROR);
+        send_error(ErrorCode.UNKNOWN_API_ERROR);
         return null;
     }
 }
 
 function get_agency_from_stop(stop) {
     let agency = stop.feed_version.feed.onestop_id.split('-').pop();
-    if (agencies_by_onestop_name.hasOwnProperty(agency)) {
-        agency = agencies_by_onestop_name[agency];
-    }
-    return agency;
+    return corrections.transsee_agency_from_onestop_name(agency, stop);
 }
 
 function dep_to_watch_data(stop, departure) {
@@ -212,7 +209,7 @@ function send_to_watch(departures_for_watch) {
     }
 
     if (departures_for_watch.length == 0) {
-        send_error(Error.NO_RESULTS);
+        send_error(ErrorCode.NO_RESULTS);
         return;
     }
 
@@ -220,7 +217,7 @@ function send_to_watch(departures_for_watch) {
         console.log('Message sent successfully: ' + JSON.stringify(combined_watch_data));
     }, function(e) {
         console.log('Message failed: ' + JSON.stringify(e));
-        send_error(Error.COULD_NOT_SEND_MESSAGE);
+        send_error(ErrorCode.COULD_NOT_SEND_MESSAGE);
     });
 }
 
@@ -231,23 +228,27 @@ async function get_stops(lat, lon, radius) {
         "lon": lon,
         "radius": radius,
         "apikey": apikey.TRANSITLAND_KEY,
+        "limit": 100,
     }).toString();
 
     const response = await fetch(stops_endpoint_url).catch((e) => {
-        send_error(Error.NO_CONNECTION);
+        send_error(ErrorCode.NO_CONNECTION);
         throw e;
     });
     const json = await response.json().catch((e) => {
         console.log('Error parsing JSON from stops request');
-        send_error(Error.UNKNOWN_API_ERROR);
+        send_error(ErrorCode.UNKNOWN_API_ERROR);
         throw e;
     });
     if (json.message == 'Invalid authentication credentials') {
-        send_error(Error.INVALID_API_KEY);
+        send_error(ErrorCode.INVALID_API_KEY);
         throw new Error(json.message);
     }
 
-    return json.stops.toSorted(compare_distance_to_here_stops(lat, lon));
+    if (!json.hasOwnProperty("stops")) {
+        console.log(JSON.stringify(json));
+    }
+    return json.stops.toSorted(compare_distance_to_here_stops(lat, lon)).slice(0, 9);
 }
 
 async function get_departures_transitland(stop) {
@@ -257,16 +258,16 @@ async function get_departures_transitland(stop) {
     }).toString();
 
     const response = await fetch(departures_url).catch((e) => {
-        send_error(Error.NO_CONNECTION);
+        send_error(ErrorCode.NO_CONNECTION);
         throw e;
     });
     const json = await response.json().catch((e) => {
         console.log('Error parsing JSON from departures request');
-        send_error(Error.UNKNOWN_API_ERROR);
+        send_error(ErrorCode.UNKNOWN_API_ERROR);
         throw e;
     });
     if (json.message == 'Invalid authentication credentials') {
-        send_error(Error.INVALID_API_KEY);
+        send_error(ErrorCode.INVALID_API_KEY);
         throw new Error(json.message);
     }
 
@@ -282,14 +283,16 @@ async function get_departures_transsee(stop) {
 
     let departures_url = new URL("http://transsee.ca/publicJSONFeed");
     if (corrections.stop_tag.hasOwnProperty(agency)) {
-        const {route_tag, stop_tag} = corrections.stop_tag[agency](stop);
-        departures_url.search = new URLSearchParams({
-            "command": "predictions",
+        const stop_params = corrections.stop_tag[agency](stop);
+        let params = new URLSearchParams({
+            "command": "predictionsForMultiStops",
             "premium": apikey.TRANSSEE_USERID,
             "a": agency,
-            "r": route_tag,
-            "s": stop_tag,
         });
+        for (stop_param of stop_params) {
+            params.append("stops", stop_param);
+        }
+        departures_url.search = params;
     } else {
         departures_url.search = new URLSearchParams({
             "command": "predictions",
@@ -300,19 +303,19 @@ async function get_departures_transsee(stop) {
     }
 
     const response = await fetch(departures_url).catch((e) => {
-        send_error(Error.NO_CONNECTION);
+        send_error(ErrorCode.NO_CONNECTION);
         throw e;
     });
     if (response.status == 500) {
         // sometimes this means invalid API key
-        send_error(Error.UNKNOWN_API_ERROR);
+        send_error(ErrorCode.UNKNOWN_API_ERROR);
         const text = await response.text();
         console.log(text);
         throw new Error(text);
     }
     const json = await response.json().catch((e) => {
         console.log('Error parsing JSON from TransSee predictions request');
-        send_error(Error.UNKNOWN_API_ERROR);
+        send_error(ErrorCode.UNKNOWN_API_ERROR);
         throw e;
     });
 
@@ -320,13 +323,14 @@ async function get_departures_transsee(stop) {
 }
 
 async function get_departures_for_watch_with_stops(stops) {
-    let transsee_stops = stops.filter((stop) => transsee_agencies.includes(get_agency_from_stop(stop)));
+    let transsee_stops = stops.filter((stop) => transsee_agencies.has(get_agency_from_stop(stop)));
     let transitland_stops = stops.filter((stop) => transsee_stops.includes(stop));
     let transsee_departures_by_index;
     let transitland_departures_by_index = await Promise.all(transitland_stops.map(get_departures_transitland));
     try {
         transsee_departures_by_index = await Promise.all(transsee_stops.map(get_departures_transsee));
     } catch (e) {
+        console.log(e);
         transsee_departures_by_index = [];
         // no transsee API key; fall back on transitland
         transitland_departures_by_index.push(...await Promise.all(transsee_stops.map(get_departures_transitland)));
@@ -340,7 +344,12 @@ async function get_departures_for_watch_with_stops(stops) {
             if (!route.hasOwnProperty("direction")) continue;
             for (direction of route.direction) {
                 if (!direction.hasOwnProperty("prediction")) continue;
-                departures_for_watch.push(transsee_dep_to_watch_data(stop, route, direction.title, direction.prediction[0]));
+                try {
+                    departures_for_watch.push(transsee_dep_to_watch_data(stop, route, direction.title, direction.prediction[0]));
+                } catch (e) {
+                    console.log(JSON.stringify(route));
+                    throw e;
+                }
             }
         }
     }
@@ -351,6 +360,7 @@ async function get_departures_for_watch_with_stops(stops) {
         });
 
     const filtered = filter_departures(transitland_departures_by_stop);
+
     departures_for_watch.push(...filtered.map(([stop, dep]) => dep_to_watch_data(stop, dep)));
     return departures_for_watch;
 }
@@ -380,10 +390,10 @@ function get_location_and_routes() {
     const location_error = function(err) {
         if(err.code == err.PERMISSION_DENIED) {
             console.log('Location access was denied by the user.');  
-            send_error(Error.LOCATION_ACCESS_DENIED);
+            send_error(ErrorCode.LOCATION_ACCESS_DENIED);
         } else {
             console.log('location error (' + err.code + '): ' + err.message);
-            send_error(Error.UNKNOWN_LOCATION_ERROR);
+            send_error(ErrorCode.UNKNOWN_LOCATION_ERROR);
         }
     }
 
