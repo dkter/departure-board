@@ -274,22 +274,23 @@ static void click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
+static GDrawCommandSequence* vehicle_type_to_sequence(VehicleType vehicle_type) {
+    switch (vehicle_type) {
+    case STREETCAR:
+        return s_streetcar_sequence;
+    case SUBWAY:
+        return s_subway_sequence;
+    case BUS:
+        return s_bus_sequence;
+    case REGIONAL_TRAIN:
+        return s_regional_train_sequence;
+    }
+    return s_bus_sequence;
+}
+
 static void vehicle_update_proc(Layer *layer, GContext *ctx) {
     WindowData* data = window_data_current(window_get_user_data(s_window));
-    switch (data->vehicle_type) {
-    case STREETCAR:
-        s_vehicle_sequence = s_streetcar_sequence;
-        break;
-    case SUBWAY:
-        s_vehicle_sequence = s_subway_sequence;
-        break;
-    case BUS:
-        s_vehicle_sequence = s_bus_sequence;
-        break;
-    case REGIONAL_TRAIN:
-        s_vehicle_sequence = s_regional_train_sequence;
-        break;
-    }
+    s_vehicle_sequence = vehicle_type_to_sequence(data->vehicle_type);
 
     GRect bounds = layer_get_bounds(layer);
     GPoint vehicle_origin = GPoint(bounds.origin.x, bounds.origin.y + 40);
@@ -566,6 +567,10 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
                 sample_data_arr.array[i].shape = (RouteShape)shape->value->int16;
             }
         }
+        // set the vehicle frame to the most open state (i.e. at the end of the sequence)
+        s_vehicle_frame_index = (int)gdraw_command_sequence_get_num_frames(
+            vehicle_type_to_sequence(sample_data_arr.array[0].vehicle_type)
+        ) - 1;
         redraw_all();
 
         app_timer_register(60000, send_refresh, NULL);
