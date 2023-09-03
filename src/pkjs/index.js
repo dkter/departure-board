@@ -347,6 +347,15 @@ async function get_departures_for_watch_with_stops(stops) {
         for (route of dep) {
             if (!route.hasOwnProperty("direction")) continue;
             for (direction of route.direction) {
+                if (direction.title == "") {
+                    // I think it's safe to ignore this case? if not I will make it a special case for GO transit
+                    // not sure what this means for GO but I keep seeing it. arrival at union maybe?
+                    continue;
+                }
+                else if (direction.title.toLowerCase() == stop.stop_name.toLowerCase()) {
+                    // this vehicle's final destination is this stop, so we don't need to show it
+                    continue;
+                }
                 if (!direction.hasOwnProperty("prediction")) continue;
                 try {
                     departures_for_watch.push(transsee_dep_to_watch_data(stop, route, direction.title, direction.prediction[0]));

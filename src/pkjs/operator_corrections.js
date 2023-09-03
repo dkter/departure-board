@@ -78,17 +78,27 @@ exports.transsee = {
     },
     "GO Transit": function(stop, route, direction, prediction, watch_data) {
         watch_data[keys.shape] = RouteShape.RECT;
+        
+        const [route_number, ...rest] = direction.split(" - ");
+        watch_data[keys.route_number] = route_number;
+        watch_data[keys.dest_name] = "to " + rest.join(" - ");
     },
     "GO Trains": function(stop, route, direction, prediction, watch_data) {
         watch_data[keys.shape] = RouteShape.RECT;
         watch_data[keys.vehicle_type] = VehicleType.REGIONAL_TRAIN;
 
-        watch_data[keys.dest_name] = "to " + direction.replace(watch_data[keys.route_number] + " - ", "");
+        const [route_number, ...rest] = direction.split(" - ");
+        watch_data[keys.route_number] = route_number;
+        watch_data[keys.dest_name] = "to " + rest.join(" - ");
     },
     "Kitchener-Waterloo GRT": function(stop, route, direction, prediction, watch_data) {
         if (route.routeTag == "301") {
             watch_data[keys.vehicle_type] = VehicleType.STREETCAR;
         }
+    },
+    "UP Express": function(stop, route, direction, prediction, watch_data) {
+        watch_data[keys.shape] = RouteShape.RECT;
+        watch_data[keys.vehicle_type] = VehicleType.REGIONAL_TRAIN;
     }
 }
 
@@ -126,28 +136,28 @@ exports.stop_tag = {
         // I can't think of a better way to do this other than to hardcode a mapping
         // of every station to the lines that serve it
         if (stop.stop_id == "UN") {
-            return ["LW|UN", "LE|UN", "GT|UN", "MI|UN", "BR|UN", "RH|UN", "ST|UN"];
+            return ["LW|UN_0", "LE|UN_0", "GT|UN_0", "MI|UN_0", "BR|UN_0", "RH|UN_0", "ST|UN_0"];
         }
         else if (['MI', 'OA', 'AP', 'BO', 'SCTH', 'LO', 'BU', 'WR', 'CL', 'NI', 'EX', 'HA', 'AL', 'PO'].includes(stop.stop_id)) {
-            return ["LW|" + stop.stop_id];
+            return ["LW|" + stop.stop_id + "_0"];
         }
         else if (['OS', 'WH', 'SC', 'RO', 'PIN', 'GU', 'AJ', 'EG', 'DA'].includes(stop.stop_id)) {
-            return ["LE|" + stop.stop_id];
+            return ["LE|" + stop.stop_id + "_0"];
         }
         else if (['ML', 'LS', 'CO', 'SR', 'ME', 'KP', 'DI', 'ER'].includes(stop.stop_id)) {
-            return ["MI|" + stop.stop_id];
+            return ["MI|" + stop.stop_id + "_0"];
         }
         else if (['AC', 'SM', 'MA', 'KI', 'SF', 'BE', 'MO', 'GE', 'GL', 'WE', 'BL', 'LN', 'ET', 'BR'].includes(stop.stop_id)) {
-            return ["GT|" + stop.stop_id];
+            return ["GT|" + stop.stop_id + "_0"];
         }
         else if (['AD', 'RU', 'AU', 'KC', 'MP', 'NE', 'EA', 'BD', 'DW', 'BA'].includes(stop.stop_id)) {
-            return ["BR|" + stop.stop_id];
+            return ["BR|" + stop.stop_id + "_0"];
         }
         else if (['OR', 'BM', 'GO', 'OL', 'LA', 'RI'].includes(stop.stop_id)) {
-            return ["RH|" + stop.stop_id];
+            return ["RH|" + stop.stop_id + "_0"];
         }
         else if (['ST', 'CE', 'AG', 'MJ', 'KE', 'MR', 'UI', 'MK', 'LI'].includes(stop.stop_id)) {
-            return ["ST|" + stop.stop_id];
+            return ["ST|" + stop.stop_id + "_0"];
         }
         return [];
     },
