@@ -573,6 +573,9 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
         ) - 1;
         redraw_all();
 
+        // vibrate to let the user know something was updated
+        vibes_short_pulse();
+
         app_timer_register(60000, send_refresh, NULL);
     }
 }
