@@ -64,7 +64,7 @@ function get_departure_time(departure) {
 }
 
 function get_agency_from_stop(stop) {
-    let agency = stop.feed_version.feed.onestop_id.split('-').pop();
+    let agency = stop.agency;
     return corrections.transsee_agency_from_onestop_name(agency, stop);
 }
 
@@ -166,10 +166,10 @@ function filter_departures(departures_by_stop) {
 
 function compare_distance_to_here_stops(lat, lon) {
     return function(stop1, stop2) {
-        const stop1_lat = stop1.geometry.coordinates[1];
-        const stop1_lon = stop1.geometry.coordinates[0];
-        const stop2_lat = stop2.geometry.coordinates[1];
-        const stop2_lon = stop2.geometry.coordinates[0];
+        const stop1_lat = stop1.stop_lat;
+        const stop1_lon = stop1.stop_lon;
+        const stop2_lat = stop2.stop_lat;
+        const stop2_lon = stop2.stop_lon;
         const dist1 = Math.sqrt(
             Math.pow(stop1_lat - lat, 2) + Math.pow(stop1_lon - lon, 2)
         );
@@ -226,13 +226,11 @@ function send_to_watch(departures_for_watch) {
 }
 
 async function get_stops(lat, lon, radius) {
-    let stops_endpoint_url = new URL("https://transit.land/api/v2/rest/stops");
+    let stops_endpoint_url = new URL("https://stops.david.industries/api/find");
     stops_endpoint_url.search = new URLSearchParams({
         "lat": lat,
         "lon": lon,
-        "radius": radius,
-        "apikey": apikey.TRANSITLAND_KEY,
-        "limit": 100,
+        "limit": 12,
     }).toString();
 
     const response = await fetch(stops_endpoint_url).catch((e) => {
@@ -244,19 +242,12 @@ async function get_stops(lat, lon, radius) {
         send_error(ErrorCode.UNKNOWN_API_ERROR);
         throw e;
     });
-    if (json.message == 'Invalid authentication credentials') {
-        send_error(ErrorCode.INVALID_API_KEY);
-        throw new Error(json.message);
-    }
 
-    if (!json.hasOwnProperty("stops")) {
-        console.log(JSON.stringify(json));
-    }
-    return json.stops.toSorted(compare_distance_to_here_stops(lat, lon)).slice(0, 9);
+    return json.toSorted(compare_distance_to_here_stops(lat, lon)).slice(0, 9);
 }
 
 async function get_departures_transitland(stop) {
-    let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.onestop_id + "/departures");
+    let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.stop_id + "/departures");
     departures_url.search = new URLSearchParams({
         "apikey": apikey.TRANSITLAND_KEY,
     }).toString();
@@ -328,16 +319,17 @@ async function get_departures_transsee(stop) {
 
 async function get_departures_for_watch_with_stops(stops) {
     let transsee_stops = stops.filter((stop) => transsee_agencies.has(get_agency_from_stop(stop)));
+    console.log(JSON.stringify(transsee_stops));
     let transitland_stops = stops.filter((stop) => transsee_stops.includes(stop));
     let transsee_departures_by_index;
-    let transitland_departures_by_index = await Promise.all(transitland_stops.map(get_departures_transitland));
+    //let transitland_departures_by_index = await Promise.all(transitland_stops.map(get_departures_transitland));
     try {
         transsee_departures_by_index = await Promise.all(transsee_stops.map(get_departures_transsee));
     } catch (e) {
         console.log(e);
         transsee_departures_by_index = [];
         // no transsee API key; fall back on transitland
-        transitland_departures_by_index.push(...await Promise.all(transsee_stops.map(get_departures_transitland)));
+        //transitland_departures_by_index.push(...await Promise.all(transsee_stops.map(get_departures_transitland)));
     }
     const transsee_departures_by_stop = transsee_departures_by_index.map(
         (departures, index) => [transsee_stops[index], departures]);
@@ -366,15 +358,15 @@ async function get_departures_for_watch_with_stops(stops) {
             }
         }
     }
-    const transitland_departures_by_stop = transitland_departures_by_index.map(
-        (departures, index) => {
-            if (index < transitland_stops.length) return [transitland_stops[index], departures];
-            else return [transsee_stops[index - transitland_stops.length], departures]
-        });
+    // const transitland_departures_by_stop = transitland_departures_by_index.map(
+    //     (departures, index) => {
+    //         if (index < transitland_stops.length) return [transitland_stops[index], departures];
+    //         else return [transsee_stops[index - transitland_stops.length], departures]
+    //     });
 
-    const filtered = filter_departures(transitland_departures_by_stop);
+    // const filtered = filter_departures(transitland_departures_by_stop);
 
-    departures_for_watch.push(...filtered.map(([stop, dep]) => dep_to_watch_data(stop, dep)));
+    // departures_for_watch.push(...filtered.map(([stop, dep]) => dep_to_watch_data(stop, dep)));
     return departures_for_watch;
 }
 
