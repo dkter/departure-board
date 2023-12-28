@@ -6,9 +6,11 @@
 
 ## Building
 
-Create a file called `apikey.js` in `src/pkjs`, obtain a free Transitland API key from https://www.transit.land/, and put your key in the file like this:
+Create a file called `apikey.js` in `src/pkjs`, ~~obtain a free Transitland API key from https://www.transit.land/, and put your key in the file like this:~~
 
     exports.TRANSITLAND_KEY = "YOUR KEY GOES HERE"
+
+**(Update)** - At the moment, Transitland is no longer used and an API key is not needed. TransSee (described below) is now required. I may re-enable Transitland in the future but I moved off of it because it was somewhat slow and unreliable and didn't support real-time predictions in the way that I needed.
 
 If you have a [TransSee](https://transsee.ca) premium subscription, you can also add your TransSee user ID for real-time predictions:
 
