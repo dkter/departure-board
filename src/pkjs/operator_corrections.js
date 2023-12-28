@@ -161,4 +161,13 @@ exports.stop_tag = {
         }
         return [];
     },
+    "viarail": function(stop) {
+        // this thing is weird, I'll deal with it later
+        // GTFS returns a stop id (119) and a stop code (TRTO)
+        // transsee accepts a route tag and a stop tag. route tags are seemingly just ranges of stops on the route
+        // (119-341) and stop codes are of the form 119_0 (not sure what the _0 is for but maybe I can just add it
+        // like above?)
+        // could do something like what gotrain does but there are way more stops probably
+        return [];
+    }
 }
