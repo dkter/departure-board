@@ -7,7 +7,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 const apikey = require('./apikey');
 const keys = require('message_keys');
 const corrections = require('./operator_corrections');
-const { VehicleType, RouteShape, GColor, ErrorCode, agencies_by_onestop_name, transsee_agencies } = require("./data");
+const { VehicleType, RouteShape, GColor, ErrorCode } = require("./data");
 
 const MAX_WATCH_DATA = 12;
 const SEARCH_RADIUS_M = 500;
@@ -27,75 +27,6 @@ function rgb_to_pebble_colour(hexstr) {
     b >>= 6;
     argb8 = (0x3 << 6) | (r << 4) | (g << 2) | b;
     return argb8;
-}
-
-function get_mins_to_hhmmss(datestr, timestr) {
-    const now_date = new Date(Date.now());
-    // apparently javascript cannot output or parse strings in anything
-    // but UTC. timestr is going to be in the local timezone. so
-    // adjust now_date so it outputs as local time when converted to UTC?
-    now_date.setMinutes(now_date.getMinutes() - now_date.getTimezoneOffset());
-    // datestr doesn't seem reliable (on May 6 I was getting TTC routes with service_date set to May 13)
-    // so... just assume the trip is in the next 24 hours idk
-    const now_datestr = now_date.toISOString().split("T")[0];
-    const future_iso_str = now_datestr + "T" + timestr + ".000Z";
-    let future_timestamp = Date.parse(future_iso_str);
-    if (future_timestamp < now_date) {
-        future_timestamp = future_timestamp + 24*60*60*1000;
-    }
-    const minutes = Math.round((future_timestamp - now_date) / 60000);
-    return minutes;
-}
-
-function get_departure_time(departure) {
-    if (departure.departure.estimated != null) {
-        return departure.departure.estimated;
-    } else if (departure.departure_time != null) {
-        return departure.departure_time;
-    } else if (departure.arrival.estimated != null) {
-        return departure.arrival.estimated;
-    } else if (departure.arrival_time != null) {
-        return departure.arrival_time;
-    } else {
-        console.log("Departure of " + departure.trip.route.route_long_name + " has no departure time");
-        send_error(ErrorCode.UNKNOWN_API_ERROR);
-        return null;
-    }
-}
-
-function get_agency_from_stop(stop) {
-    let agency = stop.agency;
-    return corrections.transsee_agency_from_onestop_name(agency, stop);
-}
-
-function dep_to_watch_data(stop, departure) {
-    let watch_data = {};
-    watch_data[keys.time] = get_mins_to_hhmmss(departure.service_date, get_departure_time(departure));
-    watch_data[keys.unit] = "min";
-    watch_data[keys.stop_name] = stop.stop_name;
-    watch_data[keys.dest_name] = "to " + departure.trip.trip_headsign;
-    watch_data[keys.route_number] = departure.trip.route.route_short_name;
-    watch_data[keys.route_name] = departure.trip.route.route_long_name;
-    // https://gtfs.org/schedule/reference/#routestxt
-    watch_data[keys.vehicle_type] = {
-        0: VehicleType.STREETCAR,
-        1: VehicleType.SUBWAY,
-        2: VehicleType.REGIONAL_TRAIN,
-        3: VehicleType.BUS,
-        5: VehicleType.STREETCAR, // cable car
-        6: VehicleType.STREETCAR, // gondola
-        7: VehicleType.SUBWAY, // funicular
-        11: VehicleType.BUS, // trolleybus
-        12: VehicleType.SUBWAY, // monorail
-    }[departure.trip.route.route_type];
-    watch_data[keys.color] = rgb_to_pebble_colour(departure.trip.route.route_color);
-    watch_data[keys.shape] = RouteShape.ROUNDRECT;
-
-    if (corrections.transitland.hasOwnProperty(departure.trip.route.agency.agency_name)) {
-        corrections.transitland[departure.trip.route.agency.agency_name](stop, departure, watch_data);
-    }
-
-    return watch_data;
 }
 
 function transsee_dep_to_watch_data(stop, route, direction, prediction) {
@@ -119,49 +50,6 @@ function transsee_dep_to_watch_data(stop, route, direction, prediction) {
     }
 
     return watch_data;
-}
-
-function vehicle_already_departed(departure) {
-    if (departure.departure.estimated_utc == null) {
-        // transitland shouldn't return departures with scheduled times that already happened
-        return false;
-    }
-
-    const estimated_deptime = Date.parse(departure.departure.estimated_utc);
-
-    const now = Date.now();
-
-    return (estimated_deptime < now);
-}
-
-function filter_departures(departures_by_stop) {
-    let done_ids = new Set();
-    let priority = [];
-    let last = [];
-
-    for (const [stop, deps] of departures_by_stop) {
-        let done_ids_this_stop = new Set();
-        for (const dep of deps) {
-            const route_dest_id = dep.trip.route.id << 32 + dep.trip.stop_pattern_id;
-            if (done_ids_this_stop.has(route_dest_id)) {
-                continue;
-            } else if (vehicle_already_departed(dep)) {
-                // according to the estimate, this vehicle already departed
-                console.log("Skipping " + dep.departure.estimated_utc);
-                continue;
-            } else if (!done_ids.has(route_dest_id)) {
-                priority.push([stop, dep]);
-                done_ids.add(route_dest_id);
-                done_ids_this_stop.add(route_dest_id);
-            } else {
-                last.push([stop, dep]);
-                done_ids_this_stop.add(route_dest_id);
-            }
-        }
-    }
-
-    let total_list = priority.concat(last);
-    return total_list;
 }
 
 function compare_distance_to_here_stops(lat, lon) {
@@ -246,43 +134,18 @@ async function get_stops(lat, lon, radius) {
     return json.toSorted(compare_distance_to_here_stops(lat, lon)).slice(0, 9);
 }
 
-async function get_departures_transitland(stop) {
-    let departures_url = new URL("https://transit.land/api/v2/rest/stops/" + stop.stop_id + "/departures");
-    departures_url.search = new URLSearchParams({
-        "apikey": apikey.TRANSITLAND_KEY,
-    }).toString();
-
-    const response = await fetch(departures_url).catch((e) => {
-        send_error(ErrorCode.NO_CONNECTION);
-        throw e;
-    });
-    const json = await response.json().catch((e) => {
-        console.log('Error parsing JSON from departures request');
-        send_error(ErrorCode.UNKNOWN_API_ERROR);
-        throw e;
-    });
-    if (json.message == 'Invalid authentication credentials') {
-        send_error(ErrorCode.INVALID_API_KEY);
-        throw new Error(json.message);
-    }
-
-    return json.stops[0].departures;
-}
-
 async function get_departures_transsee(stop) {
     if (!apikey.hasOwnProperty("TRANSSEE_USERID")) {
         throw new Error("TRANSSEE_USERID is not set");
     }
 
-    const agency = get_agency_from_stop(stop);
-
     let departures_url = new URL("http://transsee.ca/publicJSONFeed");
-    if (corrections.stop_tag.hasOwnProperty(agency)) {
-        const stop_params = corrections.stop_tag[agency](stop);
+    if (corrections.stop_tag.hasOwnProperty(stop.agency)) {
+        const stop_params = corrections.stop_tag[stop.agency](stop);
         let params = new URLSearchParams({
             "command": "predictionsForMultiStops",
             "premium": apikey.TRANSSEE_USERID,
-            "a": agency,
+            "a": stop.agency,
         });
         for (stop_param of stop_params) {
             params.append("stops", stop_param);
@@ -292,7 +155,7 @@ async function get_departures_transsee(stop) {
         departures_url.search = new URLSearchParams({
             "command": "predictions",
             "premium": apikey.TRANSSEE_USERID,
-            "a": agency,
+            "a": stop.agency,
             "stopId": stop.stop_code,
         });
     }
@@ -318,21 +181,10 @@ async function get_departures_transsee(stop) {
 }
 
 async function get_departures_for_watch_with_stops(stops) {
-    let transsee_stops = stops.filter((stop) => transsee_agencies.has(get_agency_from_stop(stop)));
-    console.log(JSON.stringify(transsee_stops));
-    let transitland_stops = stops.filter((stop) => transsee_stops.includes(stop));
-    let transsee_departures_by_index;
-    //let transitland_departures_by_index = await Promise.all(transitland_stops.map(get_departures_transitland));
-    try {
-        transsee_departures_by_index = await Promise.all(transsee_stops.map(get_departures_transsee));
-    } catch (e) {
-        console.log(e);
-        transsee_departures_by_index = [];
-        // no transsee API key; fall back on transitland
-        //transitland_departures_by_index.push(...await Promise.all(transsee_stops.map(get_departures_transitland)));
-    }
+    console.log("Obtaining departures for the following stops: " + JSON.stringify(stops));
+    const transsee_departures_by_index = await Promise.all(stops.map(get_departures_transsee));
     const transsee_departures_by_stop = transsee_departures_by_index.map(
-        (departures, index) => [transsee_stops[index], departures]);
+        (departures, index) => [stops[index], departures]);
 
     let departures_for_watch = [];
     for ([stop, dep] of transsee_departures_by_stop) {
@@ -358,15 +210,6 @@ async function get_departures_for_watch_with_stops(stops) {
             }
         }
     }
-    // const transitland_departures_by_stop = transitland_departures_by_index.map(
-    //     (departures, index) => {
-    //         if (index < transitland_stops.length) return [transitland_stops[index], departures];
-    //         else return [transsee_stops[index - transitland_stops.length], departures]
-    //     });
-
-    // const filtered = filter_departures(transitland_departures_by_stop);
-
-    // departures_for_watch.push(...filtered.map(([stop, dep]) => dep_to_watch_data(stop, dep)));
     return departures_for_watch;
 }
 
